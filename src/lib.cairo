@@ -16,9 +16,12 @@ mod components {
     mod utils;
 }
 
-
-
-// mod models;
+mod models {
+    mod models;
+    mod role;
+    mod mission;
+    mod npc;
+}
 
 // mod tests {
 //     mod test_world;
