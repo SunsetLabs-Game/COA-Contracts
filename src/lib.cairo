@@ -17,9 +17,9 @@ mod components {
 }
 
 
-
 // mod models;
 
-// mod tests {
-//     mod test_world;
-// }
+mod tests {
+    //mod test_world;
+    mod test_inflict_damage;
+}
