@@ -23,3 +23,6 @@ world_address = "0x5d475a9221f6cbf1a016b12400a01b9a89935069aecd57e9876fcb2a7bb29
 [[target.starknet-contract]]
 sierra = true
 build-external-contracts = ["dojo::world::world_contract::world"]
+
+[dev-dependencies]
+dojo_cairo_test = { git = "https://github.com/dojoengine/dojo", tag = "v1.0.0-rc.1" }
