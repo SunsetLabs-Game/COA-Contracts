@@ -14,9 +14,6 @@ telegram = "https://t.me/dojoengine"
 
 [namespace]
 default = "dojo_starter"
-[writers]
-# This means that any model in the `dojo_starter` namespace can only be written to by the `dojo_starter-actions` contract.
-"dojo_starter-Mercenary" = ["dojo_starter-mercenary_actions"] 
  
 [env]
 rpc_url = "http://localhost:5050/"
