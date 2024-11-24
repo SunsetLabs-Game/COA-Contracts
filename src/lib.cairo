@@ -16,9 +16,11 @@ mod components {
     mod utils;
 }
 
-
-
-// mod models;
+mod models {
+    mod models;
+    mod inventory;
+    mod item;
+}
 
 // mod tests {
 //     mod test_world;
