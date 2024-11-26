@@ -17,8 +17,8 @@ use dojo::model::{ModelStorage, ModelValueStorage};
 #[generate_trait]
 impl rareItem_managmentImpl of rareItem_managmentTrait {
     //  create new rare_item inventory
-    fn create_rare_item_inventory(ref self: World) -> rare_items {
-        let player = get_caller_address();
+    fn create_rare_item_inventory(ref self: World , player : ContractAddress) -> rare_items {
+       
 
         let rare_item: rare_items = self.read_model((player));
         {
@@ -31,23 +31,23 @@ impl rareItem_managmentImpl of rareItem_managmentTrait {
     }
 
     // register new rare item  in rare item inventory
-    fn register_rare_item(ref self: World, item_id: u32, source: RareItemSource,) -> rare_items {
-        let player = get_caller_address();
+    fn register_rare_item(ref self: World,player:ContractAddress ,  item_id: u32, source: RareItemSource,) -> rare_items {
+      
         // Create a new rare item
         let new_item = rareItemTrait::new(item_id, source);
 
         let rare_item: rare_items = self.read_model((player));
-        {
+        
             if rare_item.items.len() > 0 {
                 if rare_item.has_available_item(item_id) {
                     panic!("Player already has this item ");
                 }
             }
-        }
+        
 
         let mut Rare_item: rare_items = self.read_model((player));
 
-        if Rare_item.add_rare_item(new_item) {
+        if  Rare_item.add_rare_item(new_item) {
             panic!("Player item array is full");
         }
         self.write_model(@Rare_item);

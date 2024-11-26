@@ -45,12 +45,12 @@ impl rare_itemsImpl of rare_itemsTrait {
         rare_items { player, items: ArrayTrait::new(), max_capacity: MAX_RARE_Items_CAPACITY, }
     }
 
-    fn has_available_item(self: rare_items, item_id: u32) -> bool {
+    fn has_available_item(self: rare_items, id: u32) -> bool {
         let mut found = false;
         // Check if the item already exists
         for i in 0
             ..self.items.len() {
-                if self.items[i].item_id == @item_id {
+                if self.items[i].item_id == @id {
                     found = true;
                     break;
                 }
