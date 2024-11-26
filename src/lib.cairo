@@ -1,10 +1,11 @@
 mod systems {
     // mod actions;
-    mod mercenary;
+    // mod mercenary;
+    mod rare_item_mg;
 }
 
 mod contracts {
-    mod mercenary;
+    // mod mercenary;
 }
 
 mod components {
@@ -17,16 +18,18 @@ mod components {
 }
 
 mod models {
-    mod models;
-    mod inventory;
-    mod item;
-    mod role;
-    mod mission;
-    mod npc;
+    // mod models;
+    // mod inventory;
+    // mod item;
+    // mod role;
+    // mod mission;
+    // mod npc;
+    mod rare_item_mg;
 }
 
 
 mod tests {
     //mod test_world;
-    mod test_inflict_damage;
+    // mod test_inflict_damage;
+    mod test_rare_item ;
 }
