@@ -31,27 +31,31 @@ impl rareItem_managmentImpl of rareItem_managmentTrait {
     }
 
     // register new rare item  in rare item inventory
-    fn register_rare_item(ref self: World,player:ContractAddress ,  item_id: u32, source: RareItemSource,) -> rare_items {
-      
-        // Create a new rare item
+    fn register_rare_item(
+        ref self: World,
+        player: ContractAddress,
+        item_id: u32,
+        source: RareItemSource,
+    ) -> rare_items {
         let new_item = rareItemTrait::new(item_id, source);
-
-        let rare_item: rare_items = self.read_model((player));
-        
-            if rare_item.items.len() > 0 {
-                if rare_item.has_available_item(item_id) {
-                    panic!("Player already has this item ");
-                }
-            }
-        
-
-        let mut Rare_item: rare_items = self.read_model((player));
-
-        if  Rare_item.add_rare_item(new_item) {
+    
+        // Retrieve or initialize inventory
+        let  rare_item: rare_items = self.read_model((player));
+    
+        // Check for duplicates
+        if rare_item.has_available_item(item_id) {
+            panic!("Player already has this item");
+        }
+        let mut rare_item: rare_items = self.read_model((player));
+        // Add new item to the inventory
+        if !rare_item.add_rare_item(new_item) {
             panic!("Player item array is full");
         }
-        self.write_model(@Rare_item);
-        Rare_item
+    
+        // Persist updated inventory
+        self.write_model(@rare_item);
+        rare_item
     }
+    
 }
 

@@ -45,11 +45,10 @@ impl rare_itemsImpl of rare_itemsTrait {
         rare_items { player, items: ArrayTrait::new(), max_capacity: MAX_RARE_Items_CAPACITY, }
     }
 
-    fn has_available_item(self: rare_items, id: u32) -> bool {
+    fn has_available_item( self: rare_items, id: u32) -> bool {
         let mut found = false;
         // Check if the item already exists
-        for i in 0
-            ..self.items.len() {
+        for i in 0 ..self.items.len() {
                 if self.items[i].item_id == @id {
                     found = true;
                     break;
@@ -61,9 +60,9 @@ impl rare_itemsImpl of rare_itemsTrait {
     // New item
     fn add_rare_item(ref self: rare_items, rareItem: rareItem) -> bool {
         // validate space
-        if self.items.len() >= self.max_capacity {
-            return false;
-        }
+        // if self.items.len() >= self.max_capacity {
+        //     return false;
+        // }
 
         // Add item
         self.items.append(rareItem);
@@ -107,7 +106,7 @@ mod tests {
 
         let i_rareItem = inventory.items[0];
         assert(i_rareItem.item_id == @1, 'item id mismatch');
-        // assert(i_rareItem.item_source ==  source, 'source mismatch');
+    //assert(i_rareItem.item_source ==  source, 'source mismatch');
     }
 
     #[test]

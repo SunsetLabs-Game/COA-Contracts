@@ -29,29 +29,17 @@ mod tests {
         let ndef = namespace_def();
         let mut world = spawn_test_world([ndef].span());
         
-        // Data for the rare item
-        let item_id: u32 = 12345;
+        // Data for the new item
+        let item_id = 1;
         let source = RareItemSource::Mission;
 
-        // First registration of the rare item
+        // Register the item
         let rare_item = rareItem_managmentTrait::register_rare_item(ref world, player, item_id, source);
-        
-        // Verify the registered rare item
-        assert_eq!(rare_item.player, player, "Player address mismatch");
-        assert_eq!(rare_item.has_available_item(item_id),true, "Registered item not found in inventory");
 
-        // Try to register the same rare item again, handle with `Result`
-        // let result = rareItem_managmentTrait::register_rare_item(ref world, player, item_id, source);
-        // assert!(result.is_err(), "Duplicate item registration did not return an error");
-
-        // if let Err(err) = result {
-        //     assert_eq!(err, "Player already has this item", "Unexpected error message");
-        // }
-
-        // Register another item
-        let new_item_id: u32 = 67890;
-        let new_rare_item = rareItem_managmentTrait::register_rare_item(ref world, player, new_item_id, source);
-        assert!(new_rare_item.has_available_item(new_item_id), "Newly added item not found in inventory");
+        // Assertions
+        assert_eq!(rare_item.player, player, "Player mismatch");
+        assert_eq!(rare_item.items.len(), 1, "Item was not added");
+        assert!(rare_item.has_available_item(item_id), "New item not found in inventory");
     }
 
     #[test]
@@ -66,4 +54,30 @@ mod tests {
         assert_eq!(rare_item.items.len(), 0, "Item length mismatch");
         assert_eq!(rare_item.max_capacity, 10, "Capacity mismatch");
     }
-}
+
+    
+    #[test]
+    fn test_register_multiple_unique_items() {
+        let player = starknet::contract_address_const::<
+            0x07dc7899aa655b0aae51eadff6d801a58e97dd99cf4666ee59e704249e51adf2,
+        >();
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+
+        // Register multiple items
+       let mut i = 1;
+            let source = RareItemSource::Mission;
+            rareItem_managmentTrait::register_rare_item(ref world, player, i , source);
+            i = i+1;
+            rareItem_managmentTrait::register_rare_item(ref world, player, i , source);
+            i = i+1;
+            let rare_item = rareItem_managmentTrait::register_rare_item(ref world, player, i , source);
+
+            // Assertions
+            assert_eq!(rare_item.player, player, "Player mismatch for item ");
+            assert!(rare_item.has_available_item(i), "Item  not found in inventory");
+            let rare_item = rareItem_managmentTrait::register_rare_item(ref world, player, i , source);
+            assert_eq!(rare_item.items.len(), i,"array size not match" );
+        }
+    }
+
