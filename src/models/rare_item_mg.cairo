@@ -5,11 +5,12 @@ use starknet::storage::{
 
 use core::debug::PrintTrait;
 use core::array::ArrayTrait;
+use core::array::Array;
 
 const MAX_RARE_Items_CAPACITY: usize = 10;
 
-#[derive(Serde, Copy, Drop)]
-#[dojo::model]
+#[derive(Drop, Serde, Clone)]
+// #[dojo::model]
 pub struct rare_items{
     #[key]              
     pub player : ContractAddress,
@@ -81,4 +82,56 @@ impl rare_itemsImpl of rare_itemsTrait {
         true
     }
 
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::{rare_items, rare_itemsImpl, rareItem, rareItemImpl, RareItemSource,
+        MAX_RARE_Items_CAPACITY
+    };
+
+    use core::debug::PrintTrait;
+
+    #[test]
+    fn test_new_rare_items() {
+        let player = starknet::contract_address_const::<0x07dc7899aa655b0aae51eadff6d801a58e97dd99cf4666ee59e704249e51adf2>();
+        let inventory = rare_itemsImpl::new(player);
+        assert(inventory.player == player, 'Invalid player address');
+        // assert(inventory.items == rareItem, 'Should be set');
+        assert(inventory.max_capacity == 10, 'Invalid max capacity');
+        assert(inventory.items.len() == 0, 'Should start empty');
+    }
+
+    #[test]
+    fn test_add_rare_item() {
+        let player = starknet::contract_address_const::<0x07dc7899aa655b0aae51eadff6d801a58e97dd99cf4666ee59e704249e51adf2>();
+        let mut inventory = rare_itemsImpl::new(player);
+        let source = RareItemSource::Mission;
+        let item = rareItemImpl::new(1,source );
+        
+        assert(inventory.add_rare_item(item), 'Should add item');
+        assert(inventory.items.len() == 1, 'Should have one item');
+
+        let i_rareItem = inventory.items[0];
+        assert(i_rareItem.item_id == @1 ,'item id mismatch');
+        // assert(i_rareItem.item_source ==  source, 'source mismatch');
+    }
+
+    // #[test]
+    // fn test_has_available_item(){
+    //     let player = starknet::contract_address_const::<0x07dc7899aa655b0aae51eadff6d801a58e97dd99cf4666ee59e704249e51adf2>();
+    //     let mut inventory = rare_itemsImpl::new(player);
+    //     let source = RareItemSource::Mission;
+    //     let item = rareItemImpl::new(1,source );
+        
+    //     assert(inventory.add_rare_item(item), 'Should add item');
+    //     assert(inventory.items.len() == 1, 'Should have one item');
+
+    //     let id = inventory.items[0].item_id;
+      
+
+    //     let has_available = rare_itemsImpl::has_available_item(inventory ,id);
+
+    // }
 }

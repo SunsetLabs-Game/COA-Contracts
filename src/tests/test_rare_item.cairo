@@ -56,7 +56,7 @@ mod tests {
           for i in 0..rare_item.items.len() {
             if rare_item.items[i].item_id == @id {
                 found_item_id =  true; 
-                if rare_item.items[i].item_source == RareItemSource::Mission{
+                if rare_item.items[i].item_source == @source{
                     found_source = true ;
                 }
                 break;
