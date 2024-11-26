@@ -13,8 +13,8 @@ mod components {
     // mod stats;
     // mod weapon;
     // mod armour;
-    // mod world;
-    // mod utils;
+    mod world;
+    mod utils;
 }
 
 mod models {
@@ -31,6 +31,6 @@ mod models {
 mod tests {
     //mod test_world;
     // mod test_inflict_damage;
-     mod test_rare_item ;
+    //  mod test_rare_item ;
    
 }

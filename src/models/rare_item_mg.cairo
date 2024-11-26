@@ -2,15 +2,14 @@ use core::starknet::{ContractAddress, get_caller_address};
 use starknet::storage::{
     StoragePointerReadAccess, StoragePointerWriteAccess, Vec, VecTrait, MutableVecTrait, Map,
 };
-
 use core::debug::PrintTrait;
 use core::array::ArrayTrait;
 use core::array::Array;
 
 const MAX_RARE_Items_CAPACITY: usize = 10;
 
-#[derive(Drop, Serde, Clone)]
-// #[dojo::model]
+#[derive(Drop, Serde, Clone )]
+#[dojo::model]
 pub struct rare_items{
     #[key]              
     pub player : ContractAddress,
@@ -20,7 +19,9 @@ pub struct rare_items{
 }
 
 #[derive(Serde, Copy, Drop)]
+#[dojo::model]
 pub struct rareItem {
+    #[key]
     pub item_id: u32,
     pub item_source: RareItemSource,
 }
@@ -118,20 +119,20 @@ mod tests {
         // assert(i_rareItem.item_source ==  source, 'source mismatch');
     }
 
-    // #[test]
-    // fn test_has_available_item(){
-    //     let player = starknet::contract_address_const::<0x07dc7899aa655b0aae51eadff6d801a58e97dd99cf4666ee59e704249e51adf2>();
-    //     let mut inventory = rare_itemsImpl::new(player);
-    //     let source = RareItemSource::Mission;
-    //     let item = rareItemImpl::new(1,source );
+    #[test]
+    fn test_has_available_item(){
+        let player = starknet::contract_address_const::<0x07dc7899aa655b0aae51eadff6d801a58e97dd99cf4666ee59e704249e51adf2>();
+        let mut inventory = rare_itemsImpl::new(player);
+        let source = RareItemSource::Mission;
+        let id :u32 = 1;
+        let item = rareItemImpl::new(id,source );
         
-    //     assert(inventory.add_rare_item(item), 'Should add item');
-    //     assert(inventory.items.len() == 1, 'Should have one item');
-
-    //     let id = inventory.items[0].item_id;
+        assert(inventory.add_rare_item(item), 'Should add item');
+        assert(inventory.items.len() == 1, 'Should have one item');    
       
 
-    //     let has_available = rare_itemsImpl::has_available_item(inventory ,id);
+        let has_available = rare_itemsImpl::has_available_item(inventory , id);
+        assert!(has_available , "item_id not in items");
 
-    // }
+    }
 }
