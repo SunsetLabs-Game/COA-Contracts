@@ -1,7 +1,7 @@
 use core::box::BoxTrait;
 use core::hash::HashStateTrait;
 use core::poseidon::{PoseidonTrait, HashState};
-use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait, };
+use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait,};
 use starknet::{ContractAddress, get_contract_address, get_caller_address, get_tx_info};
 
 

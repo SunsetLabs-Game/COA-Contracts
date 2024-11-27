@@ -1,4 +1,3 @@
-
 #[derive(Serde, Copy, Drop)]
 #[dojo::model]
 pub struct rareItem {
@@ -19,7 +18,4 @@ impl rareItemImpl of rareItemTrait {
         rareItem { item_id, item_source }
     }
 }
-
-
-
 
