@@ -1,7 +1,7 @@
 mod systems {
     // mod actions;
     // mod mercenary;
-     mod rare_item_mg;
+  
 }
 
 mod contracts {
@@ -25,12 +25,13 @@ mod models {
     // mod mission;
     // mod npc;
     mod rare_item_mg;
+     mod  rare_item_inventory ;
 }
 
 
 mod tests {
     //mod test_world;
     // mod test_inflict_damage;
-     mod test_rare_item ;
+    //  mod test_rare_item ;
    
 }
