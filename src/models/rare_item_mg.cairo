@@ -14,7 +14,7 @@ pub struct rare_items {
     #[key]
     pub player: ContractAddress,
     pub items: Array<rareItem>,
-    pub max_capacity: usize,
+    
 }
 
 #[derive(Serde, Copy, Drop)]
@@ -42,7 +42,7 @@ impl rareItemImpl of rareItemTrait {
 impl rare_itemsImpl of rare_itemsTrait {
     // New rare_items
     fn new(player: ContractAddress) -> rare_items {
-        rare_items { player, items: ArrayTrait::new(), max_capacity: MAX_RARE_Items_CAPACITY, }
+        rare_items { player, items: ArrayTrait::new(), }
     }
 
     fn has_available_item( self: rare_items, id: u32) -> bool {
@@ -59,11 +59,7 @@ impl rare_itemsImpl of rare_itemsTrait {
 
     // New item
     fn add_rare_item(ref self: rare_items, rareItem: rareItem) -> bool {
-        // validate space
-        // if self.items.len() >= self.max_capacity {
-        //     return false;
-        // }
-
+       
         // Add item
         self.items.append(rareItem);
         true
@@ -88,7 +84,7 @@ mod tests {
         let inventory = rare_itemsImpl::new(player);
         assert(inventory.player == player, 'Invalid player address');
         // assert(inventory.items == rareItem, 'Should be set');
-        assert(inventory.max_capacity == 10, 'Invalid max capacity');
+        // assert(inventory.max_capacity == 10, 'Invalid max capacity');
         assert(inventory.items.len() == 0, 'Should start empty');
     }
 
