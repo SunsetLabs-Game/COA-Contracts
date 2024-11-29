@@ -11,12 +11,18 @@ use starknet::{ContractAddress, get_contract_address, get_caller_address, get_tx
 //                         RANDOM NUMBER GENERATION                 ||
 //********************************************************************
 
-// Generates a unique UUID for the world dispatcher by fetching the world UUID.
+///
+/// Generates a unique UUID for the world dispatcher by fetching the world UUID.
+/// 1. `uuid`: Retrieves the world UUID from the dispatcher and converts it to a `u128`.
+/// 
 fn uuid(world: IWorldDispatcher) -> u128 {
     IWorldDispatcherTrait::uuid(world).into()
 }
 
-// Generates a seed using the Pedersen hash with the contract address and transaction hash.
+///
+/// Generates a seed using the Pedersen hash with the contract address and transaction hash.
+/// 1.`seed`: Computes a Pedersen hash of the transaction hash and the contract address (`salt`) to generate a seed.
+/// 
 fn seed(salt: ContractAddress) -> felt252 {
     pedersen::pedersen(starknet::get_tx_info().unbox().transaction_hash, salt.into())
 }
@@ -25,7 +31,11 @@ fn seed(salt: ContractAddress) -> felt252 {
 //                         RANDOM STRUCTURE                         ||
 //********************************************************************
 
-// `Random` struct holds `seed` and `nonce` for generating random values.
+///
+/// The `Random` struct holds a `seed` and `nonce` for generating random values.
+/// 1. `seed`: The seed used for random value generation.  
+/// 2. `nonce`: A unique value used to ensure randomness.
+/// 
 #[derive(Copy, Drop, Serde)]
 struct Random {
     seed: felt252,
@@ -36,27 +46,29 @@ struct Random {
 //                   RANDOM TRAIT IMPLEMENTATION                    ||
 //********************************************************************
 
-// `RandomImpl` provides methods to generate random values using the `Random` struct.
+///
+/// The `RandomImpl` provides methods to generate random values using the `Random` struct.
+/// 1. `new`: Initialize `Random` struct with a new seed derived from the contract address and sets the nonce to 0.
+/// 2. `next_seed`: Generates a new seed by applying the Pedersen hash using the current seed and nonce.
+/// 3. `next`: Generates a random value of type `T` by applying bitwise NOT on the current seed.
+/// 4. `next_capped`: Generates a random value capped by `cap` using the modulo operation on the current seed.
+/// 
+#[generate_trait]
 #[generate_trait]
 impl RandomImpl of RandomTrait {
-    // one instance by contract, then passed by ref to sub fns
-    //Initializes `Random` struct with a new seed and nonce.
-    fn new() -> Random {
+        fn new() -> Random {
         Random { seed: seed(get_contract_address()), nonce: 0 }
     }
-    //Generates a new seed by applying the Pedersen hash with the current nonce.
     fn next_seed(ref self: Random) -> felt252 {
         self.nonce += 1;
         self.seed = pedersen::pedersen(self.seed, self.nonce.into());
         self.seed
     }
-    // Generates a random value of type `T` using the current seed and applying bitwise NOT.
     fn next<T, +Into<T, u256>, +Into<u8, T>, +TryInto<u256, T>, +BitNot<T>>(ref self: Random) -> T {
         let seed: u256 = self.next_seed().into();
         let mask: T = BitNot::bitnot(0_u8.into());
         (mask.into() & seed).try_into().unwrap()
     }
-    // Generates a random value capped by `cap` using modulo operation.
     fn next_capped<T, +Into<T, u256>, +TryInto<u256, T>, +Drop<T>>(ref self: Random, cap: T) -> T {
         let seed: u256 = self.next_seed().into();
         (seed % cap.into()).try_into().unwrap()
@@ -67,7 +79,9 @@ impl RandomImpl of RandomTrait {
 //                   UUID GENERATION WITH POSEIDON                   ||
 //********************************************************************
 
-// Generates a unique UUID for the world by hashing the transaction hash and world UUID with Poseidon.
+///
+/// `get_uuid`: Hashes the transaction hash and world UUID using Poseidon and returns the resulting UUID as a `u128`.
+/// 
 fn get_uuid(self: IWorldDispatcher) -> u128 {
     let hash_felt = PoseidonTrait::new()
         .update(get_tx_info().unbox().transaction_hash)

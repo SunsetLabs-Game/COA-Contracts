@@ -8,8 +8,13 @@ use core::fmt::{Display, Formatter, Error};
 //                        STATUS STRUCTURES                         ||
 //********************************************************************
 
-// `Stats` structure represents the core attributes.
-// It contains the following stats: attack, defense, speed, and strength.
+///
+/// The `Stats` structure represents the core attributes of a character or entity.
+/// 1. `attack`: The attack value of the entity.  
+/// 2. `defense`: The defense value of the entity.  
+/// 3. `speed`: The speed value of the entity.  
+/// 4. `strength`: The strength value of the entity.
+/// 
 #[derive(Copy,Drop,Serde,Introspect)]
 pub struct Stats {
     attack:u16,
@@ -22,31 +27,36 @@ pub struct Stats {
 //                          STATS TRAIT                             ||
 //********************************************************************
 
-// `StatsTrait` defines the required behavior for types that can have stats.
+///
+/// `StatsTrait` defines the required behavior for types that can have stats.
+/// 1. `stats`: Returns the stats associated with type `T`.  
+/// 2. `index`: Returns a unique index (`u8`) for the type `T`.
+/// 
 pub trait StatsTrait<T>{
-    // returns the stats associated with type `T`.
     fn stats(self:T) -> Stats;
-    // returns a unique index for the type `T`.
     fn index(self:T) -> u8;
 }
 
 //********************************************************************
-//                     DISPLAY IMPLEMENTATION                        ||
+//                     DISPLAY IMPLEMENTATION                       ||
 //********************************************************************
 
-// Implements `Display` for the `Stats` struct, allowing it to be formatted as a string.
-// This is useful for debugging.
+///
+/// Implements `Display` for the `Stats` struct, allowing it to be formatted as a string.
+/// This is useful for debugging.
+/// 1. `fmt`:Formats`Stats` struct into a string displaying its attributes: `attack`, `defense`, `speed`, and `strength`.
+/// 
 impl DisplayImplT of Display<Stats> {
     fn fmt(self: @Stats, ref f: Formatter) -> Result<(), Error> {
         let str: ByteArray = format!(
             "attack: {},\tdefense: {},\tspeed: {},\tstrength: {}",
-            self.attack,         // Attack stat.
-            self.defense,        // Defense stat.
-            self.speed,          // Speed stat.
-            self.strength        // Strength stat.
+            self.attack,         
+            self.defense,        
+            self.speed,          
+            self.strength        
         );
-        f.buffer.append(@str);   // Append formatted stats string to formatter.
-        Result::Ok(())           // Return successful result.
+        f.buffer.append(@str);   
+        Result::Ok(())          
     }
 }
 
@@ -54,14 +64,18 @@ impl DisplayImplT of Display<Stats> {
 //                ADDITION IMPLEMENTATION FOR STATS                 ||
 //********************************************************************
 
-// Implements `Add` trait for `Stats` struct, allowing addition of two `Stats`.
+///
+/// The Implements `Add` trait for `Stats` struct, allowing addition of two `Stats`.
+///1.`add`: Sum the corresponding attributes of two `Stats` structs and returns  the result.
+/// attributes :`attack`, `defense`, `speed`, `strength`.
+///
 impl StatsAdd of Add<Stats> {
     fn add(lhs: Stats, rhs: Stats) -> Stats {
         return Stats {
-            attack: lhs.attack + rhs.attack,       // Add attack values.
-            defense: lhs.defense + rhs.defense,    // Add defense values.
-            speed: lhs.speed + rhs.speed,          // Add speed values.
-            strength: lhs.strength + rhs.strength, // Add strength values.
+            attack: lhs.attack + rhs.attack,       
+            defense: lhs.defense + rhs.defense,    
+            speed: lhs.speed + rhs.speed,          
+            strength: lhs.strength + rhs.strength, 
         };
         };
     }
@@ -71,14 +85,18 @@ impl StatsAdd of Add<Stats> {
 //               MULTIPLICATION IMPLEMENTATION FOR STATS            ||
 //********************************************************************
 
-// Implements the `Mul` trait for the `Stats` struct, allowing multiplication of two `Stats`.
+///
+/// Implements the `Mul` trait for the `Stats` struct, allowing multiplication of two `Stats`.
+/// 1. `mul`: Multiplies the corresponding attributes of two `Stats` structs and returns the result.
+///  attributes :`attack`, `defense`, `speed`, `strength`.
+///
 impl StatsMul of Mul<Stats> {
     fn mul(lhs: Stats, rhs: Stats) -> Stats {
         return Stats {
-            attack: lhs.attack * rhs.attack,         // Multiply attack values.
-            defense: lhs.defense * rhs.defense,      // Multiply defense values.
-            speed: lhs.speed * rhs.speed,            // Multiply speed values.
-            strength: lhs.strength * rhs.strength,   // Multiply strength values.
+            attack: lhs.attack * rhs.attack,         
+            defense: lhs.defense * rhs.defense,      
+            speed: lhs.speed * rhs.speed,            
+            strength: lhs.strength * rhs.strength,   
         };
     }
 }
@@ -87,14 +105,18 @@ impl StatsMul of Mul<Stats> {
 //              DIVISION IMPLEMENTATION FOR STATS                   ||
 //********************************************************************
 
-// Implements the `Div` trait for the `Stats` struct, allowing division of one `Stats` object by another.
+///
+/// Implements the `Div` trait for the `Stats` struct, allowing division of one `Stats` object by another.
+/// 1. `div`: Divides the corresponding attributes of two `Stats` structs and returns the result.
+/// attributes :`attack`, `defense`, `speed`, `strength`.
+/// 
 impl StatsDiv of Div<Stats> {
     fn div(lhs: Stats, rhs: Stats) -> Stats {
         return Stats {
-            attack: lhs.attack / rhs.attack,         // Divide attack values.
-            defense: lhs.defense / rhs.defense,      // Divide defense values.
-            speed: lhs.speed / rhs.speed,            // Divide speed values.
-            strength: lhs.strength / rhs.strength,   // Divide strength values
+            attack: lhs.attack / rhs.attack,         
+            defense: lhs.defense / rhs.defense,     
+            speed: lhs.speed / rhs.speed,            
+            strength: lhs.strength / rhs.strength,   
         };
     }
 }
