@@ -4,7 +4,7 @@
 use dojo_starter::components::stats::{Stats,StatsTrait};
 
 //********************************************************************
-//                        DATA/ENUM STRUCTURES                      ||
+//                             ENUM STRUCTURES                      ||
 //********************************************************************
 // Number of different armor types.
 const ARMOUR_COUNT:u8= 1;
