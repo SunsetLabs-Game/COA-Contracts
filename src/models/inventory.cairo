@@ -5,7 +5,7 @@ use core::array::ArrayTrait;
 use core::Zeroable;
 use dojo_starter::models::item::{Item, ItemImpl, ItemTrait};
 
-const MAX_INVENTORY_CAPACITY: usize = 10;
+const MAX_INVENTORY_CAPACITY: u32 = 10;
 
 mod errors {
     const INVENTORY_FULL: felt252 = 'Inventory is full';
@@ -19,7 +19,7 @@ pub struct Inventory {
     #[key]              
     pub id: u32,
     pub items: Array<Item>,  
-    pub max_capacity: usize, 
+    pub max_capacity: u32, 
     pub is_set: bool  
 }
 
@@ -50,12 +50,12 @@ impl InventoryImpl of InventoryTrait {
 
     // Is full
     fn is_full(self: @Inventory) -> bool {
-        self.items.len() >= *self.max_capacity
+        self.items.len() >= (*self.max_capacity).try_into().unwrap()
     }
 
     // Current capacity
-    fn available_space(self: @Inventory) -> usize {
-        *self.max_capacity - self.items.len()
+    fn available_space(self: @Inventory) -> u32 {
+        *self.max_capacity - self.items.len().try_into().unwrap()
     }
 
     // Remove item

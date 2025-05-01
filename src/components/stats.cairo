@@ -77,7 +77,6 @@ impl StatsAdd of Add<Stats> {
             speed: lhs.speed + rhs.speed,          
             strength: lhs.strength + rhs.strength, 
         };
-        };
     }
 }
 
