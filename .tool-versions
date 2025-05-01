@@ -1,1 +1,4 @@
-dojo_cairo_test 1.0.0-rc.1
+cairo 2.9.4
+dojo_cairo_test 1.4.0
+scarb 2.9.4
+dojo 1.4.0
