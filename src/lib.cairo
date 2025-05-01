@@ -3,6 +3,7 @@ mod systems {
     mod mercenary;
     mod faction;
     mod resurrection;
+    mod equipment;
 }
 
 mod contracts {
@@ -30,11 +31,13 @@ mod models {
     mod rare_item_inventory;
     mod car;
     mod player;
+    mod equipped_item;
 }
 
 mod tests {
     mod test_inflict_damage;
     mod test_faction;
     mod test_resurrection;
+    mod test_equipment;
     //  mod test_rare_item ;
 }
