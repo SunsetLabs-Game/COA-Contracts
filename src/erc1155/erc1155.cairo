@@ -104,24 +104,4 @@ pub mod IERC1155 {
         }
     }
 }
-// fn Batch_mint(
-//     ref self: TContractState,
-//     account: ContractAddress,
-//     token_ids: Span<u256>,
-//     values: Span<u256>,
-//     data: Span<felt252>,
-// );
-
-// fn mint_FT(ref self: TContractState, account: ContractAddress, token_id: u256, amount: u256);
-
-// fn mint_NFT(ref self: TContractState, account: ContractAddress, token_id: u256);
-
-// mint_with_acceptance_check(self, to, token_id, value, data)
-
-// batch_mint_with_acceptance_check(self, to, token_ids, values, data)
-
-// burn(self, from, token_id, value)
-
-// batch_burn(self, from, token_ids, values)
-
 

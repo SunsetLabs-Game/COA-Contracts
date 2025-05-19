@@ -25,6 +25,16 @@ pub mod models {
     pub mod healing_item;
     pub mod inventory;
     pub mod cooldown;
+    pub mod fungible;
+}
+
+pub mod helpers {
+    pub mod base;
+}
+
+pub mod types {
+    pub mod base;
+    pub mod player;
 }
 
 pub mod tests {}
