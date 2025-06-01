@@ -1,4 +1,4 @@
-use starknet::{ContractAddress, contract_address_const};
+use starknet::ContractAddress;
 use erc1155::IERC1155::{
     ICitizenArcanisERC1155Dispatcher as IERC1155Dispatcher, ICitizenArcanisERC1155DispatcherTrait,
 };
@@ -7,11 +7,11 @@ use snforge_std::{CheatSpan, ContractClassTrait, DeclareResultTrait, cheat_calle
 use erc1155::utils::{CREDITS, CHEST_ARMOR, WEAPON_1, HANDGUN_AMMO, PET_1};
 
 fn owner() -> ContractAddress {
-    contract_address_const::<'owner'>()
+    'owner'.try_into().unwrap()
 }
 
 fn zero() -> ContractAddress {
-    contract_address_const::<0>()
+    0.try_into().unwrap()
 }
 
 fn account1() -> ContractAddress {
@@ -19,11 +19,11 @@ fn account1() -> ContractAddress {
 }
 
 fn account2() -> ContractAddress {
-    contract_address_const::<'thurston'>()
+    'thurston'.try_into().unwrap()
 }
 
 fn account3() -> ContractAddress {
-    contract_address_const::<'lee'>()
+    'lee'.try_into().unwrap()
 }
 
 fn deploy() -> ContractAddress {

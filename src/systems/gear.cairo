@@ -3,27 +3,41 @@ pub mod GearActions {
     use crate::interfaces::gear::IGear;
     use starknet::{ContractAddress, get_caller_address};
     use dojo::world::WorldStorage;
-    use crate::models::gear::{Gear, GearTrait, GearProperties, GearType};
+    use dojo::model::ModelStorage;
+    use crate::models::gear::{Gear, GearTrait, GearProperties, GearType, WeaponStats, ArmorStats, VehicleStats, PetStats};
+    use crate::models::core::{Contract, Operator};
     use crate::helpers::base::generate_id;
 
-    fn dojo_init(ref self: ContractState, admin: ContractAddress) {}
+    const GEAR: felt252 = 'GEAR';
+
+    fn dojo_init(ref self: ContractState, admin: ContractAddress) {
+        let mut world = self.world_default();
+        
+        // Initialize admin for gear operations
+        let operator = Operator { id: admin, is_operator: true };
+        world.write_model(@operator);
+    }
 
     #[abi(embed_v0)]
     pub impl GearActionsImpl of IGear<ContractState> {
         fn upgrade_gear(
             ref self: ContractState, item_id: u256,
-        ) { // check if the available upgrade materials `id` is present in the caller's address
-        // TODO: Security
-        // for now, you must check if if the item_id with id is available in the game.
-        // This would be done accordingly, so the item struct must have the id of the material
-        // or the ids of the list of materials that can upgrade it, and the quantity needed per
-        // level and the max level attained.
+        ) { 
+            let mut world = self.world_default();
+            self._assert_admin();
+            
+            // Get the gear and check if it's upgradeable
+            let mut gear: Gear = world.read_model(item_id);
+            assert(gear.upgrade_level < gear.max_upgrade_level, 'Max upgrade level reached');
+            
+            // Upgrade the gear
+            gear.upgrade_level += 1;
+            world.write_model(@gear);
         }
 
         fn equip(ref self: ContractState, item_id: Array<u256>) {}
 
         fn equip_on(ref self: ContractState, item_id: u256, target: u256) {}
-
 
         // unequips an item and equips another item at that slot.
         fn exchange(ref self: ContractState, in_item_id: u256, out_item_id: u256) {}
@@ -34,13 +48,15 @@ pub mod GearActions {
         }
 
         fn get_item_details(ref self: ContractState, item_id: u256) -> Gear {
-            // might not return a gear
-            Default::default()
+            let world = self.world_default();
+            world.read_model(item_id)
         }
+        
         // Some Item Details struct.
         fn total_held_of(ref self: ContractState, gear_type: GearType) -> u256 {
             0
         }
+        
         // use the caller and read the model of both the caller, and the target
         // the target only refers to one target type for now
         // This target type is raidable.
@@ -65,15 +81,25 @@ pub mod GearActions {
         fn auction(ref self: ContractState, item_ids: Array<u256>) {}
         fn dismantle(ref self: ContractState, item_ids: Array<u256>) {}
         fn transfer(ref self: ContractState, item_ids: Array<u256>) {}
-        fn grant(ref self: ContractState, asset: GearType) {}
+        fn grant(ref self: ContractState, asset: GearType) {
+            let mut world = self.world_default();
+            self._assert_admin();
+            
+            // Create a new gear instance based on the asset type
+            let new_gear_id = generate_id(GEAR, ref world);
+            // Implementation would create gear based on asset type
+        }
 
         // These functions might be reserved for players within a specific faction
 
         // this function forges and creates a new item id based
         fn forge(
             ref self: ContractState, item_ids: Array<u256>,
-        ) { // should create a new asset. Perhaps deduct credits from the player.
-        // 0
+        ) { 
+            let mut world = self.world_default();
+            // Create a new forged item with unique ID
+            let forged_item_id = generate_id(GEAR, ref world);
+            // Implementation would handle forging logic
         }
 
         fn awaken(ref self: ContractState, exchange: Array<u256>) {}
@@ -89,7 +115,11 @@ pub mod GearActions {
             self.world(@"coa")
         }
 
-        fn _assert_admin(self: @ContractState) { // assert the admin here.
+        fn _assert_admin(self: @ContractState) {
+            let world = self.world_default();
+            let caller = get_caller_address();
+            let operator: Operator = world.read_model(caller);
+            assert(operator.is_operator, 'Caller is not admin');
         }
 
         fn _retrieve(

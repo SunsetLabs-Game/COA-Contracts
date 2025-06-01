@@ -25,10 +25,65 @@ pub struct Gear {
     pub max_upgrade_level: u64,
 }
 
+// Specific gear structs for different categories
+#[dojo::model]
+#[derive(Drop, Copy, Default, Serde)]
+pub struct WeaponStats {
+    #[key]
+    pub asset_id: u256,
+    pub damage: u64,
+    pub range: u64,
+    pub accuracy: u64,
+    pub fire_rate: u64,
+    pub ammo_capacity: u64,
+    pub reload_time: u64,
+}
+
+#[dojo::model]
+#[derive(Drop, Copy, Default, Serde)]
+pub struct ArmorStats {
+    #[key]
+    pub asset_id: u256,
+    pub defense: u64,
+    pub durability: u64,
+    pub weight: u64,
+    pub slot_type: felt252, // 'HELMET', 'CHEST', 'LEGS', 'BOOTS', 'GLOVES'
+}
+
+#[dojo::model]
+#[derive(Drop, Copy, Default, Serde)]
+pub struct VehicleStats {
+    #[key]
+    pub asset_id: u256,
+    pub speed: u64,
+    pub armor: u64,
+    pub fuel_capacity: u64,
+    pub cargo_capacity: u64,
+    pub maneuverability: u64,
+}
+
+#[dojo::model]
+#[derive(Drop, Copy, Default, Serde)]
+pub struct PetStats {
+    #[key]
+    pub asset_id: u256,
+    pub loyalty: u64,
+    pub intelligence: u64,
+    pub agility: u64,
+    pub special_ability: felt252,
+    pub energy: u64,
+}
+
 #[derive(Drop, Copy, Serde, PartialEq, Default)]
 pub enum GearType {
     #[default]
     None,
+    Weapon,
+    Armor,
+    Vehicle,
+    Pet,
+    Consumable,
+    Material,
 }
 
 #[derive(Drop, Copy, Serde, Default)]
