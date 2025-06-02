@@ -19,22 +19,22 @@ pub trait ICore<TContractState> {
 
 #[dojo::contract]
 pub mod CoreActions {
-    use starknet::{ContractAddress, get_caller_address};
-    use dojo::world::WorldStorage;
     use dojo::model::ModelStorage;
+    use dojo::world::WorldStorage;
+    use starknet::{ContractAddress, get_caller_address};
+    use crate::helpers::base::generate_id;
     use crate::models::core::{Contract, Operator};
     use crate::models::gear::Gear;
-    use crate::helpers::base::generate_id;
 
     const GEAR: felt252 = 'GEAR';
 
     fn dojo_init(ref self: ContractState, admin: ContractAddress, erc1155: ContractAddress) {
         let mut world = self.world_default();
-        
+
         // Initialize admin
         let operator = Operator { id: admin, is_operator: true };
         world.write_model(@operator);
-        
+
         // Initialize contract configuration
         let contract = Contract { id: 'COA_CONTRACTS', admin, erc1155 };
         world.write_model(@contract);
@@ -129,11 +129,7 @@ pub mod CoreActions {
 
             // Helmet stats
             let helmet_stats = crate::models::gear::ArmorStats {
-                asset_id: 0x2000,
-                defense: 25,
-                durability: 100,
-                weight: 2,
-                slot_type: 'HELMET',
+                asset_id: 0x2000, defense: 25, durability: 100, weight: 2, slot_type: 'HELMET',
             };
             world.write_model(@helmet_stats);
 
@@ -151,11 +147,7 @@ pub mod CoreActions {
 
             // Chest armor stats
             let chest_armor_stats = crate::models::gear::ArmorStats {
-                asset_id: 0x2001,
-                defense: 50,
-                durability: 150,
-                weight: 8,
-                slot_type: 'CHEST',
+                asset_id: 0x2001, defense: 50, durability: 150, weight: 8, slot_type: 'CHEST',
             };
             world.write_model(@chest_armor_stats);
 
@@ -173,11 +165,7 @@ pub mod CoreActions {
 
             // Leg armor stats
             let leg_armor_stats = crate::models::gear::ArmorStats {
-                asset_id: 0x2002,
-                defense: 35,
-                durability: 120,
-                weight: 6,
-                slot_type: 'LEGS',
+                asset_id: 0x2002, defense: 35, durability: 120, weight: 6, slot_type: 'LEGS',
             };
             world.write_model(@leg_armor_stats);
 
@@ -195,11 +183,7 @@ pub mod CoreActions {
 
             // Boots stats
             let boots_stats = crate::models::gear::ArmorStats {
-                asset_id: 0x2003,
-                defense: 20,
-                durability: 80,
-                weight: 3,
-                slot_type: 'BOOTS',
+                asset_id: 0x2003, defense: 20, durability: 80, weight: 3, slot_type: 'BOOTS',
             };
             world.write_model(@boots_stats);
 
@@ -217,11 +201,7 @@ pub mod CoreActions {
 
             // Gloves stats
             let gloves_stats = crate::models::gear::ArmorStats {
-                asset_id: 0x2004,
-                defense: 15,
-                durability: 60,
-                weight: 1,
-                slot_type: 'GLOVES',
+                asset_id: 0x2004, defense: 15, durability: 60, weight: 1, slot_type: 'GLOVES',
             };
             world.write_model(@gloves_stats);
 

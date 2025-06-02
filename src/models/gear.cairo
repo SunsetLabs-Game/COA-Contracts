@@ -2,12 +2,12 @@
 // For now we are sticking to gear, as some assets are not considered as gear
 // These are all gears that are non-fungible
 
-use crate::helpers::base::ContractAddressDefault;
 use core::num::traits::Zero;
-use openzeppelin::token::erc1155::interface::{IERC1155Dispatcher, IERC1155DispatcherTrait};
-use crate::erc1155::erc1155::{IERC1155MintableDispatcher, IERC1155MintableDispatcherTrait};
-use starknet::ContractAddress;
 use dojo::world::WorldStorage;
+use openzeppelin::token::erc1155::interface::{IERC1155Dispatcher, IERC1155DispatcherTrait};
+use starknet::ContractAddress;
+use crate::erc1155::erc1155::{IERC1155MintableDispatcher, IERC1155MintableDispatcherTrait};
+use crate::helpers::base::ContractAddressDefault;
 
 #[dojo::model]
 #[derive(Drop, Copy, Default, Serde)]
@@ -47,7 +47,7 @@ pub struct ArmorStats {
     pub defense: u64,
     pub durability: u64,
     pub weight: u64,
-    pub slot_type: felt252, // 'HELMET', 'CHEST', 'LEGS', 'BOOTS', 'GLOVES'
+    pub slot_type: felt252 // 'HELMET', 'CHEST', 'LEGS', 'BOOTS', 'GLOVES'
 }
 
 #[dojo::model]
