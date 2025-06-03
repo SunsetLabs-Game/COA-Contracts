@@ -47,7 +47,7 @@ pub struct ArmorStats {
     pub defense: u64,
     pub durability: u64,
     pub weight: u64,
-    pub slot_type: felt252 // 'HELMET', 'CHEST', 'LEGS', 'BOOTS', 'GLOVES'
+    pub slot_type: felt252, // 'HELMET', 'CHEST', 'LEGS', 'BOOTS', 'GLOVES'
 }
 
 #[dojo::model]
@@ -88,7 +88,7 @@ pub enum GearType {
 
 #[derive(Drop, Copy, Serde, Default)]
 pub struct GearProperties {
-    asset_id: u256,
+    pub asset_id: u256,
     // asset: Gear,
 }
 
@@ -101,6 +101,6 @@ pub trait GearTrait {
     fn forge(
         items: Array<u256>,
     ) -> u256; // can only be implemented on specific ids. Might invoke the worldstorage if necessary.
-    fn is_fungible(id: u256);
-    fn get_output();
+    fn is_fungible(id: u256) -> bool;
+    fn get_output() -> felt252;
 }

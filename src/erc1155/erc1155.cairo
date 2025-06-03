@@ -24,10 +24,10 @@ pub trait IERC1155Mintable<TContractState> {
 
 #[starknet::contract]
 pub mod IERC1155 {
-    use starknet::ContractAddress;
+    use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::introspection::src5::SRC5Component;
     use openzeppelin::token::erc1155::{ERC1155Component, ERC1155HooksEmptyImpl};
-    use openzeppelin::access::ownable::OwnableComponent;
+    use starknet::ContractAddress;
 
     component!(path: ERC1155Component, storage: erc1155, event: ERC1155Event);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);

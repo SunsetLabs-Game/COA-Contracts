@@ -1,7 +1,7 @@
 pub mod systems {
-    pub mod player;
     pub mod core;
     pub mod gear;
+    pub mod player;
 }
 
 pub mod erc1155 {
@@ -9,9 +9,9 @@ pub mod erc1155 {
 }
 
 pub mod models {
-    pub mod player;
     pub mod core;
     pub mod gear;
+    pub mod player;
 }
 
 pub mod interfaces {

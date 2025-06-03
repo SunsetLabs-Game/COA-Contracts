@@ -1,11 +1,11 @@
-use starknet::ContractAddress;
-use crate::helpers::base::ContractAddressDefault;
 use core::num::traits::Zero;
+use dojo::world::WorldStorage;
 use openzeppelin::token::erc1155::interface::{IERC1155Dispatcher, IERC1155DispatcherTrait};
+use starknet::ContractAddress;
 use crate::erc1155::erc1155::{IERC1155MintableDispatcher, IERC1155MintableDispatcherTrait};
+use crate::helpers::base::ContractAddressDefault;
+use crate::types::base::CREDITS;
 use crate::types::player::{PlayerRank, PlayerRankTrait};
-use crate::types::base::{CREDITS};
-use dojo::world::{WorldStorage};
 
 const DEFAULT_HP: u128 = 500;
 const DEFAULT_MAX_EQUIPPABLE_SLOT: u32 = 10;

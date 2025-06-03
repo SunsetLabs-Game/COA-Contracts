@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod TestConsumableSystem {
-    use starknet::ContractAddress;
-    use starknet::contract_address_const;
-    use starknet::testing::{set_contract_address, set_caller_address};
-    use super::{ConsumableSystem, ConsumableSystem::ConsumableUsed};
-    use openzeppelin::token::erc1155::interface::{IERC1155Dispatcher, IERC1155DispatcherTrait};
     use dojo::test_utils::deploy_contract;
+    use openzeppelin::token::erc1155::interface::{IERC1155Dispatcher, IERC1155DispatcherTrait};
+    use starknet::testing::{set_caller_address, set_contract_address};
+    use starknet::{ContractAddress, contract_address_const};
+    use super::ConsumableSystem;
+    use super::ConsumableSystem::ConsumableUsed;
 
     fn setup() -> (ConsumableSystem::ContractState, IERC1155Dispatcher, ContractAddress) {
         let player = contract_address_const::<0x123>();

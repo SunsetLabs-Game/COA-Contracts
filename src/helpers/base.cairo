@@ -1,7 +1,7 @@
-use starknet::ContractAddress;
 use core::num::traits::Zero;
-use dojo::world::WorldStorage;
 use dojo::model::ModelStorage;
+use dojo::world::WorldStorage;
+use starknet::ContractAddress;
 
 pub impl ContractAddressDefault of Default<ContractAddress> {
     #[inline(always)]

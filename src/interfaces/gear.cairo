@@ -1,4 +1,4 @@
-use crate::models::gear::{Gear, GearType, GearProperties};
+use crate::models::gear::{Gear, GearProperties, GearType};
 
 #[starknet::interface]
 pub trait IGear<TContractState> {

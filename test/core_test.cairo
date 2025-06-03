@@ -16,7 +16,8 @@ mod TestCoreSystem {
         // Spawn test world with our models
         let mut models = array![
             coa::models::core::operator::TEST_CLASS_HASH,
-            coa::models::core::contract::TEST_CLASS_HASH, coa::models::gear::gear::TEST_CLASS_HASH,
+            coa::models::core::contract::TEST_CLASS_HASH,
+            coa::models::gear::gear::TEST_CLASS_HASH,
             coa::models::gear::weapon_stats::TEST_CLASS_HASH,
             coa::models::gear::armor_stats::TEST_CLASS_HASH,
             coa::models::gear::vehicle_stats::TEST_CLASS_HASH,
