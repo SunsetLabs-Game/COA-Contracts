@@ -19,7 +19,9 @@ jobs:
           override: true
 
       - name: Install asdf
-        uses: asdf-vm/actions/setup@v2
+        uses: asdf-vm/actions/setup@v3
+        with:
+          asdf_branch: v0.15.0
 
       - name: Install plugins and tools
         run: |
@@ -56,6 +58,8 @@ jobs:
       - name: Build main dojo contracts
         run: |
           echo "Building main dojo contracts..."
+          # Ensure we're using the correct scarb version
+          asdf local scarb 2.10.1
           # Try sozo first, fallback to scarb if sozo is not available
           if command -v sozo >/dev/null 2>&1; then
             sozo build || (echo "❌ Main dojo build with sozo failed" && exit 1)
@@ -65,10 +69,19 @@ jobs:
           fi
           echo "✅ Main dojo build successful"
 
-      - name: Build ERC1155 contracts  
+      - name: Verify Scarb Installation
+        run: |
+          echo "Verifying Scarb installation..."
+          asdf install scarb 2.10.1
+          scarb --version || (echo "❌ Scarb installation failed" && exit 1)
+
+      - name: Build ERC1155 contracts
         run: |
           echo "Building ERC1155 contracts..."
           cd erc1155
+          asdf install scarb 2.10.1
+          asdf local scarb 2.10.1
+          scarb --version
           scarb build || (echo "❌ ERC1155 build failed" && exit 1)
           echo "✅ ERC1155 build successful"
 
@@ -90,6 +103,8 @@ jobs:
         run: |
           echo "Checking ERC1155 formatting..."
           cd erc1155
+          # Ensure we're using the correct scarb version
+          asdf local scarb 2.10.1
           scarb fmt --check || (echo "❌ ERC1155 formatting check failed" && exit 1)
           echo "✅ ERC1155 formatting check passed"
 
