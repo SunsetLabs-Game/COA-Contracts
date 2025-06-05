@@ -1,17 +1,15 @@
 #[starknet::contract]
 mod CitizenArcanisERC1155 {
-    use openzeppelin::token::erc1155::interface::ERC1155ABI;
-    use openzeppelin::access::ownable::interface::IOwnable;
-    use openzeppelin::token::erc1155::ERC1155Component::InternalTrait;
-    use starknet::{ContractAddress, get_caller_address};
-    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use core::num::traits::Zero;
-
-
-    use openzeppelin::token::erc1155::{ERC1155Component, ERC1155HooksEmptyImpl};
+    use erc1155::utils::{is_FT, is_nft};
+    use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::access::ownable::interface::IOwnable;
     use openzeppelin::introspection::src5::SRC5Component;
-    use openzeppelin::access::ownable::{OwnableComponent};
-    use erc1155::utils::{is_nft, is_FT};
+    use openzeppelin::token::erc1155::ERC1155Component::InternalTrait;
+    use openzeppelin::token::erc1155::interface::ERC1155ABI;
+    use openzeppelin::token::erc1155::{ERC1155Component, ERC1155HooksEmptyImpl};
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use starknet::{ContractAddress, get_caller_address};
 
 
     component!(path: ERC1155Component, storage: erc1155, event: ERC1155Event);
