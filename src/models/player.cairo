@@ -117,6 +117,52 @@ pub impl PlayerImpl of PlayerTrait {
     }
 
     fn is_equipped(self: @Player, type_id: u128) -> u256 {
+        // Helper to extract high 128 bits from u256
+        fn get_high(val: u256) -> u128 {
+            val.high
+        }
+
+        // Helper to check an array of u256 for a matching high bits
+        fn find_in_array(arr: Array<u256>, type_id: u128) -> Option<u256> {
+            let mut i = 0;
+            let len = arr.len();
+            while i < len {
+                let item = arr.at(i);
+                if get_high(item) == type_id {
+                    return Option::Some(item);
+                }
+                i += 1;
+            }
+            Option::None
+        }
+
+        // Check all equipped arrays
+        let arrays = array![
+            self.equipped,
+            self.left_hand,
+            self.right_hand,
+            self.left_leg,
+            self.right_leg,
+            self.upper_torso,
+            self.lower_torso,
+            self.waist
+        ];
+        let mut j = 0;
+        let arrays_len = arrays.len();
+        while j < arrays_len {
+            let arr = arrays.at(j);
+            match find_in_array(arr, type_id) {
+                Option::Some(item) => {
+                    return item;
+                },
+                Option::None => {}
+            }
+            j += 1;
+        }
+        // Check back (single u256)
+        if get_high(self.back) == type_id {
+            return self.back;
+        }
         0
     }
 
