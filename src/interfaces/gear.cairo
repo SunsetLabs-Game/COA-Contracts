@@ -32,7 +32,7 @@ pub trait IGear<TContractState> {
     fn configure(ref self: TContractState);
     fn auction(ref self: TContractState, item_ids: Array<u256>);
     fn dismantle(ref self: TContractState, item_ids: Array<u256>);
-    fn transfer(ref self: TContractState, item_ids: Array<u256>);
+    fn transfer(ref self: TContractState, to: ContractAddress, item_ids: Array<u256>, amounts: Array<u256>);
     fn grant(ref self: TContractState, asset: GearType);
 
     // These functions might be reserved for players within a specific faction

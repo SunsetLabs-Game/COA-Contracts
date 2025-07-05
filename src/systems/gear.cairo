@@ -2,11 +2,11 @@
 pub mod GearActions {
     use crate::interfaces::gear::IGear;
     use starknet::{ContractAddress, get_caller_address};
-    use dojo::world::WorldStorage;
+use openzeppelin::token::erc1155::interface::{IERC1155Dispatcher, IERC1155DispatcherTrait};
+use crate::models::player::Player;
+    use dojo::world::{WorldStorage, IWorldDispatcher, IWorldDispatcherTrait};
     use crate::models::gear::{Gear, GearTrait, GearProperties, GearType};
     use crate::helpers::base::generate_id;
-    use openzeppelin::token::erc1155::interface::{IERC1155Dispatcher, IERC1155DispatcherTrait};
-    use crate::models::player::Player;
 
     fn dojo_init(ref self: ContractState, admin: ContractAddress) {}
 
@@ -30,64 +30,46 @@ pub mod GearActions {
         // unequips an item and equips another item at that slot.
         fn exchange(ref self: ContractState, in_item_id: u256, out_item_id: u256) {}
 
-        fn refresh(
-            ref self: ContractState,
-        ) {
-            // Get the caller address (player)
+        fn refresh(ref self: ContractState) {
+            // Get caller address
             let caller = get_caller_address();
+            
+            // Get ERC1155 contract address
+            let erc1155_address = self._get_erc1155_address();
+            
+            // Get the world storage
             let world = self.world_default();
             
-            // Get the player model
+            // Get player data from world storage
             let mut player = get!(world, caller, Player);
             
-            // This should be stored in a config or passed as a parameter
-            // For now, we'll use a helper function to get the ERC1155 dispatcher
+            // Update player's equipped items based on current ownership
+            // This is a simplified implementation - in a real-world scenario,
+            // you would need to check each equipped item to verify ownership
             
-            // Get all equipped items to check
-            let mut items_to_check = array![];
-            
-            // Add all equipped items to the check list
+            // Check equipped items
             let mut i = 0;
-            let equipped_len = player.equipped.len();
-            while i < equipped_len {
-                items_to_check.append(*player.equipped.at(i));
-                i += 1;
-            }
+            let mut updated_equipped = array![];
             
-            // Add items from other equipment slots
-            self._add_items_to_check(ref items_to_check, player.right_hand);
-            self._add_items_to_check(ref items_to_check, player.left_hand);
-            self._add_items_to_check(ref items_to_check, player.right_leg);
-            self._add_items_to_check(ref items_to_check, player.left_leg);
-            self._add_items_to_check(ref items_to_check, player.upper_torso);
-            self._add_items_to_check(ref items_to_check, player.lower_torso);
-            self._add_items_to_check(ref items_to_check, player.waist);
-            
-            // Check back item if it's not zero
-            if player.back != 0 {
-                items_to_check.append(player.back);
-            }
-            
-            // Check each item to see if the player still owns it
-            let erc1155 = self._get_erc1155_dispatcher();
-            
-            // Process each item
-            let mut i = 0;
-            let items_len = items_to_check.len();
-            while i < items_len {
-                let item_id = *items_to_check.at(i);
-                let balance = erc1155.balance_of(caller, item_id);
+            while i < player.equipped.len() {
+                let item_id = *player.equipped.at(i);
+                let erc1155_dispatcher = IERC1155Dispatcher { contract_address: erc1155_address };
                 
-                // If balance is 0, the item has been transferred away
-                if balance == 0 {
-                    // Unequip the item
-                    self._unequip_item(ref world, ref player, item_id);
+                // Check if player still owns this item
+                let balance = erc1155_dispatcher.balance_of(caller, item_id);
+                
+                // If player still owns the item, keep it in the equipped array
+                if balance > 0 {
+                    updated_equipped.append(item_id);
                 }
                 
                 i += 1;
-            }
+            };
             
-            // Save the updated player model
+            // Update player's equipped items
+            player.equipped = updated_equipped;
+            
+            // Save updated player data
             set!(world, (player));
         }
 
@@ -122,37 +104,35 @@ pub mod GearActions {
 
         fn auction(ref self: ContractState, item_ids: Array<u256>) {}
         fn dismantle(ref self: ContractState, item_ids: Array<u256>) {}
-        fn transfer(ref self: ContractState, item_ids: Array<u256>) {
-            // Get the caller address (player) and recipient (to be specified by the caller)
+        fn transfer(ref self: ContractState, to: ContractAddress, item_ids: Array<u256>, amounts: Array<u256>) {
+            // Validate inputs
+            assert(item_ids.len() == amounts.len(), 'Arrays length mismatch');
+            assert(item_ids.len() > 0, 'Empty arrays not allowed');
+            
+            // Get caller address
             let caller = get_caller_address();
-            let world = self.world_default();
             
-            // Get the player model
-            let mut player = get!(world, caller, Player);
+            // Get ERC1155 contract address
+            let erc1155_address = self._get_erc1155_address();
             
-            // For each item, check if it's equipped and unequip it if necessary
-            let mut i = 0;
-            let items_len = item_ids.len();
-            while i < items_len {
-                let item_id = *item_ids.at(i);
-                
-                // Check if the item is equipped
-                let is_equipped = self._is_item_equipped(ref player, item_id);
-                
-                // If equipped, unequip it first
-                if is_equipped {
-                    self._unequip_item(ref world, ref player, item_id);
-                }
-                
-                i += 1;
+            // Convert arrays to spans
+            let item_ids_span = item_ids.span();
+            let amounts_span = amounts.span();
+            
+            // Transfer items using safeTransferFrom
+            let erc1155_dispatcher = IERC1155Dispatcher { contract_address: erc1155_address };
+            
+            // Use batch transfer if multiple items
+            if item_ids.len() > 1 {
+                erc1155_dispatcher.safe_batch_transfer_from(
+                    caller, to, item_ids_span, amounts_span, array![].span()
+                );
+            } else {
+                // Single item transfer
+                erc1155_dispatcher.safe_transfer_from(
+                    caller, to, *item_ids.at(0), *amounts.at(0), array![].span()
+                );
             }
-            
-            // Save the updated player model if any changes were made
-            set!(world, (player));
-            
-            // Note: The actual transfer of the ERC1155 token should be done through a separate call
-            // to the ERC1155 contract's safe_transfer_from or safe_batch_transfer_from methods
-            // This function just ensures that equipped items are unequipped before transfer
         }
         fn grant(ref self: ContractState, asset: GearType) {}
 
@@ -195,123 +175,5 @@ pub mod GearActions {
         starknet::contract_address_const::<0x1>() // Placeholder
         }
         
-        // Helper function to create an ERC1155 dispatcher
-        fn _get_erc1155_dispatcher(self: @ContractState) -> IERC1155Dispatcher {
-            let erc1155_address = self._get_erc1155_address();
-            IERC1155Dispatcher { contract_address: erc1155_address }
-        }
-        
-        // Helper function to add items from an array to the check list
-        fn _add_items_to_check(self: @ContractState, ref items_to_check: Array<u256>, items: Array<u256>) {
-            let mut i = 0;
-            let items_len = items.len();
-            while i < items_len {
-                items_to_check.append(*items.at(i));
-                i += 1;
-            }
-        }
-        
-        // Helper function to check if an item is equipped
-        fn _is_item_equipped(self: @ContractState, ref player: Player, item_id: u256) -> bool {
-            // Check in all equipment slots
-            
-            // Check equipped array
-            let mut i = 0;
-            let equipped_len = player.equipped.len();
-            while i < equipped_len {
-                if *player.equipped.at(i) == item_id {
-                    return true;
-                }
-                i += 1;
-            }
-            
-            // Check other equipment slots
-            if self._check_array_for_item(player.right_hand, item_id) {
-                return true;
-            }
-            if self._check_array_for_item(player.left_hand, item_id) {
-                return true;
-            }
-            if self._check_array_for_item(player.right_leg, item_id) {
-                return true;
-            }
-            if self._check_array_for_item(player.left_leg, item_id) {
-                return true;
-            }
-            if self._check_array_for_item(player.upper_torso, item_id) {
-                return true;
-            }
-            if self._check_array_for_item(player.lower_torso, item_id) {
-                return true;
-            }
-            if self._check_array_for_item(player.waist, item_id) {
-                return true;
-            }
-            
-            // Check back item
-            if player.back == item_id {
-                return true;
-            }
-            
-            false
-        }
-        
-        // Helper function to check if an item is in an array
-        fn _check_array_for_item(self: @ContractState, items: Array<u256>, item_id: u256) -> bool {
-            let mut i = 0;
-            let items_len = items.len();
-            while i < items_len {
-                if *items.at(i) == item_id {
-                    return true;
-                }
-                i += 1;
-            }
-            false
-        }
-        
-        // Helper function to unequip an item
-        fn _unequip_item(self: @ContractState, ref world: WorldStorage, ref player: Player, item_id: u256) {
-            // Check and remove from equipped array
-            let mut new_equipped = array![];
-            let mut i = 0;
-            let equipped_len = player.equipped.len();
-            while i < equipped_len {
-                let current_item = *player.equipped.at(i);
-                if current_item != item_id {
-                    new_equipped.append(current_item);
-                }
-                i += 1;
-            }
-            player.equipped = new_equipped;
-            
-            // Check and remove from other equipment slots
-            player.right_hand = self._filter_item_from_array(player.right_hand, item_id);
-            player.left_hand = self._filter_item_from_array(player.left_hand, item_id);
-            player.right_leg = self._filter_item_from_array(player.right_leg, item_id);
-            player.left_leg = self._filter_item_from_array(player.left_leg, item_id);
-            player.upper_torso = self._filter_item_from_array(player.upper_torso, item_id);
-            player.lower_torso = self._filter_item_from_array(player.lower_torso, item_id);
-            player.waist = self._filter_item_from_array(player.waist, item_id);
-            
-            // Check back item
-            if player.back == item_id {
-                player.back = 0;
-            }
-        }
-        
-        // Helper function to filter an item from an array
-        fn _filter_item_from_array(self: @ContractState, items: Array<u256>, item_id: u256) -> Array<u256> {
-            let mut new_items = array![];
-            let mut i = 0;
-            let items_len = items.len();
-            while i < items_len {
-                let current_item = *items.at(i);
-                if current_item != item_id {
-                    new_items.append(current_item);
-                }
-                i += 1;
-            }
-            new_items
-        }
     }
 }

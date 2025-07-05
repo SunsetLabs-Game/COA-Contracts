@@ -11,18 +11,14 @@ pub trait IPlayer<TContractState> {
     );
     fn get_player(self: @TContractState, player_id: u256) -> Player;
     fn register_guild(ref self: TContractState);
-    // Refresh player's inventory to sync with ERC1155 token balances
-    fn refresh_inventory(ref self: TContractState);
-    // Transfer NFT objects from the game
-    fn transfer_objects(ref self: TContractState, item_ids: Array<u256>);
 }
 
 #[dojo::contract]
 pub mod PlayerActions {
-    use starknet::ContractAddress;
+    use starknet::{ContractAddress, get_caller_address};
     use crate::models::player::{Player, PlayerTrait};
+    use openzeppelin::token::erc1155::interface::{IERC1155Dispatcher, IERC1155DispatcherTrait};
     use super::IPlayer;
-    use crate::interfaces::gear::{IGearDispatcher, IGearDispatcherTrait};
 
     // const GEAR_
 
@@ -74,23 +70,137 @@ pub mod PlayerActions {
         }
         fn register_guild(ref self: ContractState) {}
         
-        fn refresh_inventory(ref self: ContractState) {
-            // Get the gear system contract address and call refresh
-            // This will check all equipped items and unequip any that the player no longer owns
-            let contract_address = starknet::contract_address_const::<0x2>();
-            let gear_contract = IGearDispatcher { contract_address };
-            gear_contract.refresh();
-        }
-        
-        fn transfer_objects(ref self: ContractState, item_ids: Array<u256>) {
-            // Get the gear system contract address and call transfer
-            // This will unequip the items if necessary and prepare them for transfer
-            let contract_address = starknet::contract_address_const::<0x2>();
-            let gear_contract = IGearDispatcher { contract_address };
-            gear_contract.transfer(item_ids);
+        // Refresh player's equipped items based on current NFT ownership
+        // This should be called periodically to ensure game state matches blockchain state
+        fn refresh(ref self: ContractState) {
+            // Get caller address
+            let caller = get_caller_address();
             
-            // Note: The actual transfer of the ERC1155 token would be handled by the ERC1155 contract
-            // This function just ensures that equipped items are unequipped before transfer
+            // Get the ERC1155 contract address
+            // In a real implementation, this would be stored in a config or contract storage
+            let erc1155_address = starknet::contract_address_const::<0x1>(); // Placeholder
+            
+            // Get player data
+            let mut player = get!(self.world_default(), caller, Player);
+            
+            // Create ERC1155 dispatcher
+            let erc1155_dispatcher = IERC1155Dispatcher { contract_address: erc1155_address };
+            
+            // Check and update all equipped items
+            // 1. Main equipped items
+            let mut updated_equipped = array![];
+            let mut i = 0;
+            while i < player.equipped.len() {
+                let item_id = *player.equipped.at(i);
+                let balance = erc1155_dispatcher.balance_of(caller, item_id);
+                if balance > 0 {
+                    updated_equipped.append(item_id);
+                }
+                i += 1;
+            };
+            player.equipped = updated_equipped;
+            
+            // 2. Left hand items
+            let mut updated_left_hand = array![];
+            i = 0;
+            while i < player.left_hand.len() {
+                let item_id = *player.left_hand.at(i);
+                let balance = erc1155_dispatcher.balance_of(caller, item_id);
+                if balance > 0 {
+                    updated_left_hand.append(item_id);
+                }
+                i += 1;
+            };
+            player.left_hand = updated_left_hand;
+            
+            // 3. Right hand items
+            let mut updated_right_hand = array![];
+            i = 0;
+            while i < player.right_hand.len() {
+                let item_id = *player.right_hand.at(i);
+                let balance = erc1155_dispatcher.balance_of(caller, item_id);
+                if balance > 0 {
+                    updated_right_hand.append(item_id);
+                }
+                i += 1;
+            };
+            player.right_hand = updated_right_hand;
+            
+            // 4. Left leg items
+            let mut updated_left_leg = array![];
+            i = 0;
+            while i < player.left_leg.len() {
+                let item_id = *player.left_leg.at(i);
+                let balance = erc1155_dispatcher.balance_of(caller, item_id);
+                if balance > 0 {
+                    updated_left_leg.append(item_id);
+                }
+                i += 1;
+            };
+            player.left_leg = updated_left_leg;
+            
+            // 5. Right leg items
+            let mut updated_right_leg = array![];
+            i = 0;
+            while i < player.right_leg.len() {
+                let item_id = *player.right_leg.at(i);
+                let balance = erc1155_dispatcher.balance_of(caller, item_id);
+                if balance > 0 {
+                    updated_right_leg.append(item_id);
+                }
+                i += 1;
+            };
+            player.right_leg = updated_right_leg;
+            
+            // 6. Upper torso items
+            let mut updated_upper_torso = array![];
+            i = 0;
+            while i < player.upper_torso.len() {
+                let item_id = *player.upper_torso.at(i);
+                let balance = erc1155_dispatcher.balance_of(caller, item_id);
+                if balance > 0 {
+                    updated_upper_torso.append(item_id);
+                }
+                i += 1;
+            };
+            player.upper_torso = updated_upper_torso;
+            
+            // 7. Lower torso items
+            let mut updated_lower_torso = array![];
+            i = 0;
+            while i < player.lower_torso.len() {
+                let item_id = *player.lower_torso.at(i);
+                let balance = erc1155_dispatcher.balance_of(caller, item_id);
+                if balance > 0 {
+                    updated_lower_torso.append(item_id);
+                }
+                i += 1;
+            };
+            player.lower_torso = updated_lower_torso;
+            
+            // 8. Waist items
+            let mut updated_waist = array![];
+            i = 0;
+            while i < player.waist.len() {
+                let item_id = *player.waist.at(i);
+                let balance = erc1155_dispatcher.balance_of(caller, item_id);
+                if balance > 0 {
+                    updated_waist.append(item_id);
+                }
+                i += 1;
+            };
+            player.waist = updated_waist;
+            
+            // 9. Back item (single item)
+            if player.back != 0 {
+                let balance = erc1155_dispatcher.balance_of(caller, player.back);
+                if balance == 0 {
+                    player.back = 0; // Reset if player no longer owns the item
+                }
+            }
+            
+            // Save updated player data
+            set!(self.world_default(), (player));
         }
     }
 
