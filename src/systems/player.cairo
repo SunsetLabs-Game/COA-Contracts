@@ -11,13 +11,18 @@ pub trait IPlayer<TContractState> {
     );
     fn get_player(self: @TContractState, player_id: u256) -> Player;
     fn register_guild(ref self: TContractState);
+    // Refresh player's inventory to sync with ERC1155 token balances
+    fn refresh_inventory(ref self: TContractState);
+    // Transfer NFT objects from the game
+    fn transfer_objects(ref self: TContractState, item_ids: Array<u256>);
 }
 
 #[dojo::contract]
 pub mod PlayerActions {
-    use starknet::{ContractAddress, get_caller_address};
+    use starknet::ContractAddress;
     use crate::models::player::{Player, PlayerTrait};
     use super::IPlayer;
+    use crate::interfaces::gear::{IGearDispatcher, IGearDispatcherTrait};
 
     // const GEAR_
 
@@ -68,8 +73,28 @@ pub mod PlayerActions {
             Default::default()
         }
         fn register_guild(ref self: ContractState) {}
+        
+        fn refresh_inventory(ref self: ContractState) {
+            // Get the gear system contract address and call refresh
+            // This will check all equipped items and unequip any that the player no longer owns
+            let contract_address = starknet::contract_address_const::<0x2>();
+            let gear_contract = IGearDispatcher { contract_address };
+            gear_contract.refresh();
+        }
+        
+        fn transfer_objects(ref self: ContractState, item_ids: Array<u256>) {
+            // Get the gear system contract address and call transfer
+            // This will unequip the items if necessary and prepare them for transfer
+            let contract_address = starknet::contract_address_const::<0x2>();
+            let gear_contract = IGearDispatcher { contract_address };
+            gear_contract.transfer(item_ids);
+            
+            // Note: The actual transfer of the ERC1155 token would be handled by the ERC1155 contract
+            // This function just ensures that equipped items are unequipped before transfer
+        }
     }
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {}
+
 }
