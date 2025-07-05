@@ -18,6 +18,8 @@ pub mod PlayerActions {
     use starknet::{ContractAddress, get_caller_address};
     use crate::models::player::{Player, PlayerTrait};
     use openzeppelin::token::erc1155::interface::{IERC1155Dispatcher, IERC1155DispatcherTrait};
+    use dojo::utils::{get, set};
+    use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait};
     use super::IPlayer;
 
     // const GEAR_
@@ -86,121 +88,132 @@ pub mod PlayerActions {
             // Create ERC1155 dispatcher
             let erc1155_dispatcher = IERC1155Dispatcher { contract_address: erc1155_address };
             
+            // Create a new player instance to store updated data
+            let mut new_player = player;
+            
             // Check and update all equipped items
             // 1. Main equipped items
             let mut updated_equipped = array![];
             let mut i = 0;
-            while i < player.equipped.len() {
-                let item_id = *player.equipped.at(i);
+            let equipped_len = core::array::ArrayTrait::len(@player.equipped);
+            while i < equipped_len {
+                let item_id = *core::array::ArrayTrait::at(@player.equipped, i);
                 let balance = erc1155_dispatcher.balance_of(caller, item_id);
                 if balance > 0 {
-                    updated_equipped.append(item_id);
+                    core::array::ArrayTrait::append(ref updated_equipped, item_id);
                 }
                 i += 1;
             };
-            player.equipped = updated_equipped;
+            new_player.equipped = updated_equipped;
             
             // 2. Left hand items
             let mut updated_left_hand = array![];
             i = 0;
-            while i < player.left_hand.len() {
-                let item_id = *player.left_hand.at(i);
+            let left_hand_len = core::array::ArrayTrait::len(@player.left_hand);
+            while i < left_hand_len {
+                let item_id = *core::array::ArrayTrait::at(@player.left_hand, i);
                 let balance = erc1155_dispatcher.balance_of(caller, item_id);
                 if balance > 0 {
-                    updated_left_hand.append(item_id);
+                    core::array::ArrayTrait::append(ref updated_left_hand, item_id);
                 }
                 i += 1;
             };
-            player.left_hand = updated_left_hand;
+            new_player.left_hand = updated_left_hand;
             
             // 3. Right hand items
             let mut updated_right_hand = array![];
             i = 0;
-            while i < player.right_hand.len() {
-                let item_id = *player.right_hand.at(i);
+            let right_hand_len = core::array::ArrayTrait::len(@player.right_hand);
+            while i < right_hand_len {
+                let item_id = *core::array::ArrayTrait::at(@player.right_hand, i);
                 let balance = erc1155_dispatcher.balance_of(caller, item_id);
                 if balance > 0 {
-                    updated_right_hand.append(item_id);
+                    core::array::ArrayTrait::append(ref updated_right_hand, item_id);
                 }
                 i += 1;
             };
-            player.right_hand = updated_right_hand;
+            new_player.right_hand = updated_right_hand;
             
             // 4. Left leg items
             let mut updated_left_leg = array![];
             i = 0;
-            while i < player.left_leg.len() {
-                let item_id = *player.left_leg.at(i);
+            let left_leg_len = core::array::ArrayTrait::len(@player.left_leg);
+            while i < left_leg_len {
+                let item_id = *core::array::ArrayTrait::at(@player.left_leg, i);
                 let balance = erc1155_dispatcher.balance_of(caller, item_id);
                 if balance > 0 {
-                    updated_left_leg.append(item_id);
+                    core::array::ArrayTrait::append(ref updated_left_leg, item_id);
                 }
                 i += 1;
             };
-            player.left_leg = updated_left_leg;
+            new_player.left_leg = updated_left_leg;
             
             // 5. Right leg items
             let mut updated_right_leg = array![];
             i = 0;
-            while i < player.right_leg.len() {
-                let item_id = *player.right_leg.at(i);
+            let right_leg_len = core::array::ArrayTrait::len(@player.right_leg);
+            while i < right_leg_len {
+                let item_id = *core::array::ArrayTrait::at(@player.right_leg, i);
                 let balance = erc1155_dispatcher.balance_of(caller, item_id);
                 if balance > 0 {
-                    updated_right_leg.append(item_id);
+                    core::array::ArrayTrait::append(ref updated_right_leg, item_id);
                 }
                 i += 1;
             };
-            player.right_leg = updated_right_leg;
+            new_player.right_leg = updated_right_leg;
             
             // 6. Upper torso items
             let mut updated_upper_torso = array![];
             i = 0;
-            while i < player.upper_torso.len() {
-                let item_id = *player.upper_torso.at(i);
+            let upper_torso_len = core::array::ArrayTrait::len(@player.upper_torso);
+            while i < upper_torso_len {
+                let item_id = *core::array::ArrayTrait::at(@player.upper_torso, i);
                 let balance = erc1155_dispatcher.balance_of(caller, item_id);
                 if balance > 0 {
-                    updated_upper_torso.append(item_id);
+                    core::array::ArrayTrait::append(ref updated_upper_torso, item_id);
                 }
                 i += 1;
             };
-            player.upper_torso = updated_upper_torso;
+            new_player.upper_torso = updated_upper_torso;
             
             // 7. Lower torso items
             let mut updated_lower_torso = array![];
             i = 0;
-            while i < player.lower_torso.len() {
-                let item_id = *player.lower_torso.at(i);
+            let lower_torso_len = core::array::ArrayTrait::len(@player.lower_torso);
+            while i < lower_torso_len {
+                let item_id = *core::array::ArrayTrait::at(@player.lower_torso, i);
                 let balance = erc1155_dispatcher.balance_of(caller, item_id);
                 if balance > 0 {
-                    updated_lower_torso.append(item_id);
+                    core::array::ArrayTrait::append(ref updated_lower_torso, item_id);
                 }
                 i += 1;
             };
-            player.lower_torso = updated_lower_torso;
+            new_player.lower_torso = updated_lower_torso;
             
             // 8. Waist items
             let mut updated_waist = array![];
             i = 0;
-            while i < player.waist.len() {
-                let item_id = *player.waist.at(i);
+            let waist_len = core::array::ArrayTrait::len(@player.waist);
+            while i < waist_len {
+                let item_id = *core::array::ArrayTrait::at(@player.waist, i);
                 let balance = erc1155_dispatcher.balance_of(caller, item_id);
                 if balance > 0 {
-                    updated_waist.append(item_id);
+                    core::array::ArrayTrait::append(ref updated_waist, item_id);
                 }
                 i += 1;
             };
-            player.waist = updated_waist;
+            new_player.waist = updated_waist;
             
             // 9. Back item (single item)
-            if player.back != 0 {
-                let balance = erc1155_dispatcher.balance_of(caller, player.back);
+            if new_player.back != 0 {
+                let balance = erc1155_dispatcher.balance_of(caller, new_player.back);
                 if balance == 0 {
-                    player.back = 0; // Reset if player no longer owns the item
+                    new_player.back = 0; // Reset if player no longer owns the item
                 }
             }
             
             // Save updated player data
-            set!(self.world_default(), (player));
+            set!(self.world_default(), (new_player));
         }
     }
 

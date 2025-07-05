@@ -1,4 +1,5 @@
 use crate::models::gear::{Gear, GearType, GearProperties};
+use starknet::ContractAddress;
 
 #[starknet::interface]
 pub trait IGear<TContractState> {

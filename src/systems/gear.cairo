@@ -2,9 +2,10 @@
 pub mod GearActions {
     use crate::interfaces::gear::IGear;
     use starknet::{ContractAddress, get_caller_address};
-use openzeppelin::token::erc1155::interface::{IERC1155Dispatcher, IERC1155DispatcherTrait};
-use crate::models::player::Player;
+    use openzeppelin::token::erc1155::interface::{IERC1155Dispatcher, IERC1155DispatcherTrait};
+    use crate::models::player::Player;
     use dojo::world::{WorldStorage, IWorldDispatcher, IWorldDispatcherTrait};
+    use dojo::utils::{get, set};
     use crate::models::gear::{Gear, GearTrait, GearProperties, GearType};
     use crate::helpers::base::generate_id;
 
@@ -51,8 +52,12 @@ use crate::models::player::Player;
             let mut i = 0;
             let mut updated_equipped = array![];
             
-            while i < player.equipped.len() {
-                let item_id = *player.equipped.at(i);
+            // Use explicit trait methods to avoid ambiguity
+            let equipped_len = core::array::ArrayTrait::len(@player.equipped);
+            
+            while i < equipped_len {
+                // Use explicit trait methods for array access
+                let item_id = *core::array::ArrayTrait::at(@player.equipped, i);
                 let erc1155_dispatcher = IERC1155Dispatcher { contract_address: erc1155_address };
                 
                 // Check if player still owns this item
@@ -60,17 +65,18 @@ use crate::models::player::Player;
                 
                 // If player still owns the item, keep it in the equipped array
                 if balance > 0 {
-                    updated_equipped.append(item_id);
+                    core::array::ArrayTrait::append(ref updated_equipped, item_id);
                 }
                 
                 i += 1;
             };
             
-            // Update player's equipped items
-            player.equipped = updated_equipped;
+            // Create a new player instance with updated data
+            let mut new_player = player;
+            new_player.equipped = updated_equipped;
             
             // Save updated player data
-            set!(world, (player));
+            set!(world, (new_player));
         }
 
         fn get_item_details(ref self: ContractState, item_id: u256) -> Gear {
@@ -106,8 +112,11 @@ use crate::models::player::Player;
         fn dismantle(ref self: ContractState, item_ids: Array<u256>) {}
         fn transfer(ref self: ContractState, to: ContractAddress, item_ids: Array<u256>, amounts: Array<u256>) {
             // Validate inputs
-            assert(item_ids.len() == amounts.len(), 'Arrays length mismatch');
-            assert(item_ids.len() > 0, 'Empty arrays not allowed');
+            let item_ids_len = core::array::ArrayTrait::len(@item_ids);
+            let amounts_len = core::array::ArrayTrait::len(@amounts);
+            
+            assert(item_ids_len == amounts_len, 'Arrays length mismatch');
+            assert(item_ids_len > 0, 'Empty arrays not allowed');
             
             // Get caller address
             let caller = get_caller_address();
@@ -123,14 +132,15 @@ use crate::models::player::Player;
             let erc1155_dispatcher = IERC1155Dispatcher { contract_address: erc1155_address };
             
             // Use batch transfer if multiple items
-            if item_ids.len() > 1 {
+            if item_ids_len > 1 {
                 erc1155_dispatcher.safe_batch_transfer_from(
                     caller, to, item_ids_span, amounts_span, array![].span()
                 );
             } else {
                 // Single item transfer
                 erc1155_dispatcher.safe_transfer_from(
-                    caller, to, *item_ids.at(0), *amounts.at(0), array![].span()
+                    caller, to, *core::array::ArrayTrait::at(@item_ids, 0), 
+                    *core::array::ArrayTrait::at(@amounts, 0), array![].span()
                 );
             }
         }
@@ -174,6 +184,6 @@ use crate::models::player::Player;
         // This should be replaced with the actual ERC1155 contract address
         starknet::contract_address_const::<0x1>() // Placeholder
         }
-        
+
     }
 }
