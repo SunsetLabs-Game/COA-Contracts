@@ -30,7 +30,8 @@ pub struct Player {
     pub upper_torso: Array<u256>,
     pub lower_torso: Array<u256>,
     pub back: u256, // hangables, but it's usually just an item, leave it one for now.
-    pub waist: Array<u256> // max len for this field should be 8. (for now).
+    pub waist: Array<u256>, // max len for this field should be 8. (for now).
+    pub xp: u32,
 }
 
 #[generate_trait]
