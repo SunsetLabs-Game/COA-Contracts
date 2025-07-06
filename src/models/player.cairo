@@ -10,6 +10,18 @@ use dojo::world::{WorldStorage};
 const DEFAULT_HP: u128 = 500;
 const DEFAULT_MAX_EQUIPPABLE_SLOT: u32 = 10;
 
+#[derive(Drop, Clone, Serde, Debug, Default, Introspect)]
+pub struct Body {
+    pub left_hand: Array<u256>,
+    pub right_hand: Array<u256>,
+    pub left_leg: Array<u256>,
+    pub right_leg: Array<u256>,
+    pub upper_torso: Array<u256>,
+    pub lower_torso: Array<u256>,
+    pub back: u256, // Single item for now
+    pub waist: Array<u256>, // Max 8 slots for now.
+}
+
 #[dojo::model]
 #[derive(Drop, Clone, Serde, Debug, Default)]
 pub struct Player {
@@ -23,14 +35,8 @@ pub struct Player {
     pub level: u256, // this level is broken down from exps, usuable for boosters
     pub faction: felt252,
     pub next_rank_in: u64,
-    pub left_hand: Array<u256>,
-    pub right_hand: Array<u256>,
-    pub left_leg: Array<u256>,
-    pub right_leg: Array<u256>,
-    pub upper_torso: Array<u256>,
-    pub lower_torso: Array<u256>,
-    pub back: u256, // hangables, but it's usually just an item, leave it one for now.
-    pub waist: Array<u256> // max len for this field should be 8. (for now).
+    pub body: Body, // body parts that can be equipped, like hands, legs, torso, etc.
+    // pub back: u256, // hangables, but it's usually just an item, leave it one for now.
 }
 
 #[generate_trait]
@@ -44,6 +50,7 @@ pub impl PlayerImpl of PlayerTrait {
             self.max_equip_slot = DEFAULT_MAX_EQUIPPABLE_SLOT;
             self.rank = Default::default();
             self.next_rank_in = self.rank.compute_max_val(); // change this
+            self.body = Default::default(); 
         }
     }
 
@@ -120,12 +127,12 @@ pub impl PlayerImpl of PlayerTrait {
     fn is_equipped(self: Player, type_id: u128) -> u256 {
         let equipped_arrays = array![
             self.equipped,
-            self.right_hand,
-            self.left_leg,
-            self.right_leg,
-            self.upper_torso,
-            self.lower_torso,
-            self.waist,
+            self.body.right_hand,
+            self.body.left_leg,
+            self.body.right_leg,
+            self.body.upper_torso,
+            self.body.lower_torso,
+            self.body.waist,
         ];
 
         let mut result: u256 = 0;
@@ -178,4 +185,8 @@ pub mod Errors {
 // Helper function to get the high 128 bits from a u256
 fn get_high(val: u256) -> u128 {
     val.high
+}
+
+fn get_low(val: u256) -> u128 {
+    val.low
 }
