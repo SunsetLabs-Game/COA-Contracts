@@ -5,8 +5,13 @@ pub mod GearActions {
     use dojo::world::WorldStorage;
     use crate::models::gear::{Gear, GearTrait, GearProperties, GearType};
     use crate::helpers::base::generate_id;
+    use crate::store::StoreTrait;
 
-    fn dojo_init(ref self: ContractState, admin: ContractAddress) {}
+    fn dojo_init(ref self: ContractState, admin: ContractAddress) {
+        let mut world = self.world(@"combat_game");
+        let mut store = StoreTrait::new(world);
+        store.init_gear();
+    }
 
     #[abi(embed_v0)]
     pub impl GearActionsImpl of IGear<ContractState> {

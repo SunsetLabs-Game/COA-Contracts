@@ -31,3 +31,4 @@ pub mod types {
 }
 
 pub mod tests {}
+pub mod store;
