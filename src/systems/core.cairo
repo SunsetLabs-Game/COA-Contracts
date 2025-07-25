@@ -47,16 +47,6 @@ pub mod CoreActions {
     #[abi(embed_v0)]
     pub impl CoreActionsImpl of super::ICore<ContractState> {
         fn spawn_items(ref self: ContractState, item_types: Array<u256>) {
-            // Assert the caller is the contract admin by reading admin from models/core.cairo.
-            // Accept an array of GearDetails (ID is NOT an input).
-            // Internally generate the NFT IDs: set .high based on GearType (using an Into trait or
-            // mapping) and .low as a per-type incremental counter.
-            // Mint the item(s) to the contract’s warehouse address as indicated by the Contract
-            // struct (NOT directly to any player).
-            // Mark the item as spawned = true in contract state/storage so it becomes available for
-            // later pickup.
-            // Emit an event that includes the admin, the gear type, and the new item ID(s).
-            // Be robust to concurrent calls (no duplicate IDs for the same gear type).
             let caller = get_caller_address();
             let mut world = self.world(@"coa_contracts");
             let contract: Contract = world.read_model(COA_CONTRACTS);
