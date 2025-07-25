@@ -62,6 +62,33 @@ pub struct GearProperties {
     // asset: Gear,
 }
 
+pub impl GearTypeU128 of Into<GearType, u128> {
+    fn into(self: GearType) -> u128 {
+        match self {
+            GearType::Weapon => 0x1,
+            GearType::BluntWeapon => 0x101,
+            GearType::Sword => 0x102,
+            GearType::Bow => 0x103,
+            GearType::Firearm => 0x104,
+            GearType::Polearm => 0x105,
+            GearType::HeavyFirearms => 0x106,
+            GearType::Explosives => 0x107,
+            GearType::Helmet => 0x2000,
+            GearType::ChestArmor => 0x2001,
+            GearType::LegArmor => 0x2002,
+            GearType::Boots => 0x2003,
+            GearType::Gloves => 0x2004,
+            GearType::Shield => 0x2005,
+            GearType::Vehicle => 0x30000,
+            GearType::Pet => 0x800000,
+            GearType::Drone => 0x800001,
+            GearType::None => 0x0,
+        }
+    }
+}
+
+
+
 // for now, all items would implement this trait
 // move this trait and it's impl to `helpers/gear.cairo`
 
