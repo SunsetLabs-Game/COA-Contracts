@@ -87,7 +87,13 @@ pub impl GearTypeU128 of Into<GearType, u128> {
     }
 }
 
-
+#[derive(Drop, Copy, Serde)]
+#[dojo::event]
+pub struct GearSpawned {
+    #[key]
+    pub admin: ContractAddress,
+    pub item_types: Array<u256>,
+}
 
 // for now, all items would implement this trait
 // move this trait and it's impl to `helpers/gear.cairo`
