@@ -87,7 +87,7 @@ pub impl GearTypeU128 of Into<GearType, u128> {
     }
 }
 
-#[derive(Drop, Copy, Serde)]
+#[derive(Drop, Serde)]
 #[dojo::event]
 pub struct GearSpawned {
     #[key]

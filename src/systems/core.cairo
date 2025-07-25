@@ -24,15 +24,21 @@ pub mod CoreActions {
     use dojo::model::ModelStorage;
     use crate::models::core::{Contract, Operator, GearCounter};
     use crate::models::gear::{Gear, GearTypeU128, GearSpawned};
-    use crate::helpers::gear::parse_id;
     use core::array::ArrayTrait;
     use crate::erc1155::erc1155::IERC1155MintableDispatcher;
+    use dojo::event::{EventStorage};
+
 
     const GEAR: felt252 = 'GEAR';
     const COA_CONTRACTS: felt252 = 'COA_CONTRACTS';
     const GEAR_COUNTER: felt252 = 'GEAR_COUNTER';
 
-    fn dojo_init(ref self: ContractState, admin: ContractAddress, erc1155: ContractAddress) {
+    fn dojo_init(
+        ref self: ContractState,
+        admin: ContractAddress,
+        erc1155: ContractAddress,
+        warehouse: ContractAddress,
+    ) {
         let mut world = self.world(@"coa_contracts");
 
         // Initialize admin
@@ -40,7 +46,7 @@ pub mod CoreActions {
         world.write_model(@operator);
 
         // Initialize contract configuration
-        let contract = Contract { id: COA_CONTRACTS, admin, erc1155 };
+        let contract = Contract { id: COA_CONTRACTS, admin, erc1155, warehouse };
         world.write_model(@contract);
     }
 
@@ -73,7 +79,7 @@ pub mod CoreActions {
                 world.write_model(@gear);
             };
             let event = GearSpawned { admin: caller, item_types: item_types };
-            world.emit_event(event);
+            world.emit_event(@event);
         }
         // move to market only items that have been spawned.
         // if caller is admin, check spawned items and relocate
