@@ -78,3 +78,44 @@ pub fn contains_gear_type(array: Array<u256>, gear_type: GearType) -> bool {
     found
 }
 
+#[generate_trait]
+pub trait IntoU128<T> {
+    fn into_u128(self: T) -> u128;
+}
+
+#[generate_trait]
+pub trait IntoU256<T> {
+    fn into_u256(self: T) -> u256;
+}
+
+pub impl GearTypeIntoU128 of IntoU128<GearType> {
+    fn into_u128(self: GearType) -> u128 {
+        match self {
+            GearType::Weapon => 0x1,
+            GearType::BluntWeapon => 0x101,
+            GearType::Sword => 0x102,
+            GearType::Bow => 0x103,
+            GearType::Firearm => 0x104,
+            GearType::Polearm => 0x105,
+            GearType::HeavyFirearms => 0x106,
+            GearType::Explosives => 0x107,
+            GearType::Helmet => 0x2000,
+            GearType::ChestArmor => 0x2001,
+            GearType::LegArmor => 0x2002,
+            GearType::Boots => 0x2003,
+            GearType::Gloves => 0x2004,
+            GearType::Shield => 0x2005,
+            GearType::Vehicle => 0x30000,
+            GearType::Pet => 0x800000,
+            GearType::Drone => 0x800001,
+            GearType::None => 0,
+        }
+    }
+}
+
+pub impl GearTypeIntoU256 of IntoU256<GearType> {
+    fn into_u256(self: GearType) -> u256 {
+        u256 { low: 0, high: GearTypeIntoU128::into_u128(self) }
+    }
+}
+
