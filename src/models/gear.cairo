@@ -62,6 +62,38 @@ pub struct GearProperties {
     // asset: Gear,
 }
 
+#[derive(Drop, Copy, Serde, Default)]
+pub struct GearDetails {
+    pub item_type: GearType,
+    pub variation_ref: u256,
+    pub min_xp_needed: u256,
+    pub max_upgrade_level: u64,
+    // Weapon fields
+    pub damage: u64,
+    pub range: u64,
+    pub accuracy: u64,
+    pub fire_rate: u64,
+    pub ammo_capacity: u64,
+    pub reload_time: u64,
+    // Armor fields
+    pub defense: u64,
+    pub durability: u64,
+    pub weight: u64,
+    pub slot_type: felt252,
+    // Vehicle fields
+    pub speed: u64,
+    pub vehicle_armor: u64, // renamed to avoid clash with armor above
+    pub fuel_capacity: u64,
+    pub cargo_capacity: u64,
+    pub maneuverability: u64,
+    // Pet/Drone fields
+    pub loyalty: u64,
+    pub intelligence: u64,
+    pub agility: u64,
+    pub special_ability: felt252,
+    pub energy: u64,
+}
+
 // for now, all items would implement this trait
 // move this trait and it's impl to `helpers/gear.cairo`
 
