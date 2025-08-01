@@ -28,6 +28,11 @@ pub mod PetSystem {
             assert(player.body.off_body.len() == 0, 'ALREADY_HAS_PET');
             let gear_type = crate::helpers::gear::parse_id(pet_id);
             assert(gear_type == GearType::Pet, 'NOT_A_PET');
+
+            // Validate pet exists and player owns it
+            let _pet_stats: crate::models::pet_stats::PetStats = world.read_model(pet_id);
+            // TODO: Add ownership validation logic
+
             player.body.off_body.append(pet_id);
             world.write_model(@player);
         }
@@ -54,6 +59,8 @@ pub mod PetSystem {
 
             // Perform action based on action type using trait functions
             if action == 'ATTACK' {
+                // Ensure enough energy before attacking
+                assert(pet_stats.energy >= 20, 'INSUFFICIENT_ENERGY');
                 let damage = crate::traits::pet_trait::attack(@pet_stats, target);
                 if damage > 0 {
                     pet_stats.energy = pet_stats.energy - 20;
@@ -61,6 +68,8 @@ pub mod PetSystem {
                     // TODO: Apply damage to target
                 }
             } else if action == 'HEAL' {
+                // Ensure enough energy before healing
+                assert(pet_stats.energy >= 15, 'INSUFFICIENT_ENERGY');
                 let heal_amount = crate::traits::pet_trait::heal(@pet_stats);
                 if heal_amount > 0 {
                     pet_stats.energy = pet_stats.energy - 15;
@@ -68,7 +77,16 @@ pub mod PetSystem {
                     // Note: Actual healing is done in heal_player function
                 }
             } else if action == 'TRAVEL' {
-                if crate::traits::pet_trait::travel(@pet_stats, target.try_into().unwrap()) {
+                // Ensure enough energy before traveling
+                assert(pet_stats.energy >= 10, 'INSUFFICIENT_ENERGY');
+                // Safely convert the u256 target into a felt252 destination
+                let destination: felt252 = match target.try_into() {
+                    Option::Some(dest) => dest,
+                    Option::None => {
+                        return; // Invalid destination, skip action
+                    },
+                };
+                if crate::traits::pet_trait::travel(@pet_stats, destination) {
                     pet_stats.energy = pet_stats.energy - 10;
                     pet_stats.experience = pet_stats.experience + 2;
                 }
@@ -104,6 +122,9 @@ pub mod PetSystem {
 
             let pet_id = *player.body.off_body.at(0);
             let mut pet_stats: crate::models::pet_stats::PetStats = world.read_model(pet_id);
+
+            // Check if pet has enough energy
+            assert(pet_stats.energy >= 15, 'INSUFFICIENT_ENERGY');
 
             // Calculate heal amount using trait function
             let heal_amount = crate::traits::pet_trait::heal(@pet_stats);
