@@ -8,4 +8,10 @@ pub struct PetStats {
     pub agility: u64,
     pub special_ability: felt252,
     pub energy: u64,
+    // Evolución y estado de combate
+    pub evolution_stage: u8, // 0 = base, 1 = evolved, etc.
+    pub in_combat: bool,
+    pub max_energy: u64,
+    pub experience: u64,
+    pub next_evolution_at: u64,
 }
