@@ -4,7 +4,9 @@ use starknet::ContractAddress;
 pub trait IPetSystem<TContractState> {
     fn equip_pet(ref self: TContractState, player_id: ContractAddress, pet_id: u256);
     fn unequip_pet(ref self: TContractState, player_id: ContractAddress);
-    fn pet_action(ref self: TContractState, player_id: ContractAddress, action: felt252, target: u256);
+    fn pet_action(
+        ref self: TContractState, player_id: ContractAddress, action: felt252, target: u256,
+    );
     fn evolve_pet(ref self: TContractState, player_id: ContractAddress);
     fn heal_player(ref self: TContractState, player_id: ContractAddress);
 }
@@ -37,16 +39,18 @@ pub mod PetSystem {
             world.write_model(@player);
         }
 
-        fn pet_action(ref self: ContractState, player_id: ContractAddress, action: felt252, target: u256) {
+        fn pet_action(
+            ref self: ContractState, player_id: ContractAddress, action: felt252, target: u256,
+        ) {
             let mut world = self.world(@"coa");
             let player: Player = world.read_model(player_id);
-            
+
             // Check if player has a pet equipped
             assert(player.body.off_body.len() > 0, 'NO_PET_EQUIPPED');
-            
+
             let pet_id = *player.body.off_body.at(0);
             let mut pet_stats: crate::models::pet_stats::PetStats = world.read_model(pet_id);
-            
+
             // Perform action based on action type
             if action == 'ATTACK' {
                 // Simple attack calculation
@@ -73,23 +77,27 @@ pub mod PetSystem {
                     pet_stats.experience = pet_stats.experience + 2;
                 }
             }
-            
+
             world.write_model(@pet_stats);
         }
 
         fn evolve_pet(ref self: ContractState, player_id: ContractAddress) {
             let mut world = self.world(@"coa");
             let player: Player = world.read_model(player_id);
-            
+
             // Check if player has a pet equipped
             assert(player.body.off_body.len() > 0, 'NO_PET_EQUIPPED');
-            
+
             let pet_id = *player.body.off_body.at(0);
             let pet_stats: crate::models::pet_stats::PetStats = world.read_model(pet_id);
-            
+
             // Check if pet can evolve
-            assert(pet_stats.experience >= pet_stats.next_evolution_at && pet_stats.evolution_stage < 3, 'CANNOT_EVOLVE');
-            
+            assert(
+                pet_stats.experience >= pet_stats.next_evolution_at
+                    && pet_stats.evolution_stage < 3,
+                'CANNOT_EVOLVE',
+            );
+
             // Create evolved version of the pet
             let evolved_pet = crate::models::pet_stats::PetStats {
                 asset_id: pet_stats.asset_id,
@@ -102,7 +110,8 @@ pub mod PetSystem {
                 in_combat: false,
                 max_energy: pet_stats.max_energy + 20,
                 experience: 0, // Reset experience after evolution
-                next_evolution_at: pet_stats.next_evolution_at + 100, // Next evolution requires more XP
+                next_evolution_at: pet_stats.next_evolution_at
+                    + 100 // Next evolution requires more XP
             };
             world.write_model(@evolved_pet);
         }
@@ -110,18 +119,18 @@ pub mod PetSystem {
         fn heal_player(ref self: ContractState, player_id: ContractAddress) {
             let mut world = self.world(@"coa");
             let mut player: Player = world.read_model(player_id);
-            
+
             // Check if player has a pet equipped
             assert(player.body.off_body.len() > 0, 'NO_PET_EQUIPPED');
-            
+
             let pet_id = *player.body.off_body.at(0);
             let mut pet_stats: crate::models::pet_stats::PetStats = world.read_model(pet_id);
-            
+
             // Check if pet has enough energy
             if pet_stats.energy >= 15 {
                 // Calculate heal amount based on pet stats
                 let heal_amount = (pet_stats.intelligence + pet_stats.loyalty) / 3;
-                
+
                 if heal_amount > 0 {
                     // Heal the player
                     if player.hp + heal_amount.into() > player.max_hp {
@@ -129,11 +138,11 @@ pub mod PetSystem {
                     } else {
                         player.hp = player.hp + heal_amount.into();
                     }
-                    
+
                     // Reduce pet energy and gain experience
                     pet_stats.energy = pet_stats.energy - 15;
                     pet_stats.experience = pet_stats.experience + 3;
-                    
+
                     // Update both models
                     world.write_model(@player);
                     world.write_model(@pet_stats);
@@ -141,4 +150,4 @@ pub mod PetSystem {
             }
         }
     }
-} 
+}
