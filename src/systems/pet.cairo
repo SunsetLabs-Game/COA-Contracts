@@ -31,7 +31,14 @@ pub mod PetSystem {
 
             // Validate pet exists and player owns it
             let _pet_stats: crate::models::pet_stats::PetStats = world.read_model(pet_id);
-            // TODO: Add ownership validation logic
+
+            // TODO: Implement ERC1155 ownership validation
+            // For now, we assume the pet exists if PetStats can be read
+            // In a production environment, this should validate ERC1155 balance:
+            // let erc1155_address = self.get_erc1155_address();
+            // let erc1155_dispatcher = IERC1155Dispatcher { contract_address: erc1155_address };
+            // let balance = erc1155_dispatcher.balance_of(player_id, pet_id);
+            // assert(balance > 0, 'PLAYER_DOES_NOT_OWN_PET');
 
             player.body.off_body.append(pet_id);
             world.write_model(@player);
