@@ -19,14 +19,26 @@ pub trait ICore<TContractState> {
 
 #[dojo::contract]
 pub mod CoreActions {
-    use starknet::ContractAddress;
+    use super::super::super::erc1155::erc1155::IERC1155MintableDispatcherTrait;
+    use starknet::{ContractAddress, get_caller_address};
     use dojo::model::ModelStorage;
-    use crate::models::core::{Contract, Operator};
+    use crate::models::core::{Contract, Operator, GearCounter};
+    use crate::models::gear::{Gear, GearTypeU128, GearSpawned};
+    use core::array::ArrayTrait;
+    use crate::erc1155::erc1155::IERC1155MintableDispatcher;
+    use dojo::event::{EventStorage};
+
 
     const GEAR: felt252 = 'GEAR';
     const COA_CONTRACTS: felt252 = 'COA_CONTRACTS';
+    const GEAR_COUNTER: felt252 = 'GEAR_COUNTER';
 
-    fn dojo_init(ref self: ContractState, admin: ContractAddress, erc1155: ContractAddress) {
+    fn dojo_init(
+        ref self: ContractState,
+        admin: ContractAddress,
+        erc1155: ContractAddress,
+        warehouse: ContractAddress,
+    ) {
         let mut world = self.world(@"coa_contracts");
 
         // Initialize admin
@@ -34,16 +46,40 @@ pub mod CoreActions {
         world.write_model(@operator);
 
         // Initialize contract configuration
-        let contract = Contract { id: COA_CONTRACTS, admin, erc1155 };
+        let contract = Contract { id: COA_CONTRACTS, admin, erc1155, warehouse };
         world.write_model(@contract);
     }
 
     #[abi(embed_v0)]
     pub impl CoreActionsImpl of super::ICore<ContractState> {
-        fn spawn_items(
-            ref self: ContractState, item_types: Array<u256>,
-        ) { // assert the caller is the admin.
-        // and the items should be an array of GearDetails...
+        fn spawn_items(ref self: ContractState, item_types: Array<u256>) {
+            let caller = get_caller_address();
+            let mut world = self.world(@"coa_contracts");
+            let contract: Contract = world.read_model(COA_CONTRACTS);
+            assert(caller == contract.admin, 'Only admin can spawn items');
+
+            let erc1155_dispatcher = IERC1155MintableDispatcher {
+                contract_address: contract.erc1155,
+            };
+            let length_of_item_types = item_types.len();
+            for item_type in 0..length_of_item_types {
+                let item_type = *item_types.at(item_type);
+                let mut gear: Gear = world.read_model(item_type);
+                assert(!gear.spawned, 'Gear already spawned');
+                let item_id = gear.id;
+                let mut gear_counter: GearCounter = world.read_model(GEAR_COUNTER);
+                let counter = gear_counter.counter;
+                gear_counter.counter = counter + 1;
+                world.write_model(@gear_counter);
+
+                let mint_id = u256 { high: item_id.high, low: counter + 1 };
+                erc1155_dispatcher.mint(contract.warehouse, mint_id, 1, array![].span());
+                gear.item_type = item_id.high.into();
+                gear.spawned = true;
+                world.write_model(@gear);
+            };
+            let event = GearSpawned { admin: caller, item_types: item_types };
+            world.emit_event(@event);
         }
         // move to market only items that have been spawned.
         // if caller is admin, check spawned items and relocate
