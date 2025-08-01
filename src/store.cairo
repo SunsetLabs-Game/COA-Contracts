@@ -34,7 +34,7 @@ pub struct StoreItem {
     pub max_stock: u32,
     pub is_available: bool,
     pub category: felt252,
-    pub rarity: u8 // 1=Common, 2=Rare, 3=Epic, 4=Legendary
+    pub rarity: u8, // 1=Common, 2=Rare, 3=Epic, 4=Legendary
 }
 
 /// Inventario del store - separado para eficiencia
@@ -62,7 +62,7 @@ pub struct StoreTransaction {
     pub quantity: u32,
     pub total_price: u256,
     pub timestamp: u64,
-    pub status: u8 // 0=Pending, 1=Completed, 2=Failed, 3=Refunded
+    pub status: u8, // 0=Pending, 1=Completed, 2=Failed, 3=Refunded
 }
 
 /// Permisos del store
