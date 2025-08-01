@@ -46,3 +46,6 @@ pub mod tests {}
 pub mod traits {
     pub mod pet_trait;
 }
+
+// Store system - Sistema de tiendas con arquitectura ECS
+pub mod store;
