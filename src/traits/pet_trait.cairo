@@ -19,7 +19,7 @@ pub fn attack(pet_stats: @PetStats, target: u256) -> u64 {
     base_damage + loyalty_bonus * evolution_multiplier
 }
 
-pub fn heal(pet_stats: @PetStats, player_id: u256) -> u64 {
+pub fn heal(pet_stats: @PetStats) -> u64 {
     // Check if pet has enough energy
     if *pet_stats.energy < 15 {
         return 0;
