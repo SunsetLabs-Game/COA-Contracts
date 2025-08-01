@@ -3,6 +3,7 @@ pub mod systems {
     pub mod core;
     pub mod gear;
     pub mod armour;
+    pub mod pet;
 }
 
 pub mod erc1155 {
@@ -41,3 +42,7 @@ pub mod market {
 }
 
 pub mod tests {}
+
+pub mod traits {
+    pub mod pet_trait;
+}
