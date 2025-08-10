@@ -43,6 +43,20 @@ pub fn parse_id(id: u256) -> GearType {
         GearType::Pet
     } else if category == 0x800001 {
         GearType::Drone
+    } else if category == 0x90000 {
+        GearType::HealthPotion
+    } else if category == 0x90001 {
+        GearType::XpBooster
+    } else if category == 0x90002 {
+        GearType::EnergyDrink
+    } else if category == 0x90003 {
+        GearType::RepairKit
+    } else if category == 0x90004 {
+        GearType::Stimpack
+    } else if category == 0x90005 {
+        GearType::ArmorRepair
+    } else if category == 0x90006 {
+        GearType::WeaponOil
     } else {
         GearType::None // Fungible tokens or invalid
     }

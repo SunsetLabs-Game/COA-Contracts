@@ -54,7 +54,15 @@ pub enum GearType {
     Vehicle, // 0x30000
     // Pets/Drones -- 0x8xxxxx
     Pet, // 0x800000
-    Drone // 0x800001
+    Drone, // 0x800001
+    // Consumables -- 0x9xxxx
+    HealthPotion, // 0x90000 - restores HP
+    XpBooster, // 0x90001 - increases XP
+    EnergyDrink, // 0x90002 - temporary stat boost
+    RepairKit, // 0x90003 - repairs equipment durability
+    Stimpack, // 0x90004 - temporary damage boost
+    ArmorRepair, // 0x90005 - repairs armor
+    WeaponOil // 0x90006 - temporary weapon enhancement
 }
 
 #[derive(Drop, Copy, Serde, Default)]
@@ -96,5 +104,59 @@ pub impl GearImpl of GearTrait {
     fn transfer_to(ref self: Gear, new_owner: ContractAddress) {
         self.owner = new_owner;
         self.spawned = false;
+    }
+
+    // Check if item is consumable
+    fn is_consumable(self: @Gear) -> bool {
+        let item_type = parse_gear_type(*self.asset_id);
+        match item_type {
+            GearType::HealthPotion | GearType::XpBooster | GearType::EnergyDrink |
+            GearType::RepairKit | GearType::Stimpack | GearType::ArmorRepair |
+            GearType::WeaponOil => true,
+            _ => false,
+        }
+    }
+
+    // Check if item can be wielded (non-consumable equipment)
+    fn is_wieldable(self: @Gear) -> bool {
+        let item_type = parse_gear_type(*self.asset_id);
+        match item_type {
+            GearType::Weapon | GearType::BluntWeapon | GearType::Sword | GearType::Bow |
+            GearType::Firearm | GearType::Polearm | GearType::HeavyFirearms |
+            GearType::Explosives => true,
+            _ => false,
+        }
+    }
+}
+
+// Helper function to parse gear type from asset_id
+fn parse_gear_type(asset_id: u256) -> GearType {
+    let type_id = asset_id.high;
+    match type_id {
+        0x1 => GearType::Weapon,
+        0x101 => GearType::BluntWeapon,
+        0x102 => GearType::Sword,
+        0x103 => GearType::Bow,
+        0x104 => GearType::Firearm,
+        0x105 => GearType::Polearm,
+        0x106 => GearType::HeavyFirearms,
+        0x107 => GearType::Explosives,
+        0x2000 => GearType::Helmet,
+        0x2001 => GearType::ChestArmor,
+        0x2002 => GearType::LegArmor,
+        0x2003 => GearType::Boots,
+        0x2004 => GearType::Gloves,
+        0x2005 => GearType::Shield,
+        0x30000 => GearType::Vehicle,
+        0x800000 => GearType::Pet,
+        0x800001 => GearType::Drone,
+        0x90000 => GearType::HealthPotion,
+        0x90001 => GearType::XpBooster,
+        0x90002 => GearType::EnergyDrink,
+        0x90003 => GearType::RepairKit,
+        0x90004 => GearType::Stimpack,
+        0x90005 => GearType::ArmorRepair,
+        0x90006 => GearType::WeaponOil,
+        _ => GearType::None,
     }
 }

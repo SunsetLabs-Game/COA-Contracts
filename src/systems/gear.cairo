@@ -8,12 +8,14 @@ pub mod GearActions {
     use starknet::get_caller_address;
     use dojo::world::WorldStorage;
     use dojo::model::ModelStorage;
-    use crate::models::gear::{Gear, GearProperties, GearType};
+    use crate::models::gear::{Gear, GearProperties, GearType, parse_gear_type};
     use crate::models::core::Operator;
     use crate::helpers::base::generate_id;
     use crate::helpers::base::ContractAddressDefault;
     // Import session model for validation
     use crate::models::session::SessionKey;
+    // Import ERC1155 interface for burning items
+    use crate::erc1155::erc1155::{IERC1155MintableDispatcher, IERC1155MintableDispatcherTrait};
 
     const GEAR: felt252 = 'GEAR';
 
@@ -31,6 +33,26 @@ pub mod GearActions {
         pub item_id: u256,
         pub equipped: bool,
         pub via_vehicle: bool,
+    }
+
+    #[derive(Drop, Copy, Serde)]
+    #[dojo::event]
+    pub struct ItemUsed {
+        #[key]
+        pub player_id: ContractAddress,
+        #[key]
+        pub item_id: u256,
+        pub target_id: Option<u256>,
+        pub item_type: GearType,
+    }
+
+    #[derive(Drop, Copy, Serde)]
+    #[dojo::event]
+    pub struct ItemWielded {
+        #[key]
+        pub player_id: ContractAddress,
+        #[key]
+        pub item_id: u256,
     }
 
 
@@ -254,6 +276,147 @@ pub mod GearActions {
 
             successfully_picked
         }
+
+        fn use_item(
+            ref self: ContractState, item_id: u256, target_id: Option<u256>, session_id: felt252,
+        ) {
+            // Validate session before proceeding
+            self.validate_session_for_action(session_id);
+
+            let mut world = self.world_default();
+            let caller = get_caller_address();
+            let mut player: crate::models::player::Player = world.read_model(caller);
+            let gear: Gear = world.read_model(item_id);
+
+            // Verify the item exists and player owns it
+            assert(gear.owner == caller, 'ITEM_NOT_OWNED');
+
+            // Verify the item is equipped before use
+            let mut is_equipped = false;
+            let mut i = 0;
+            while i < player.equipped.len() {
+                if *player.equipped.at(i) == item_id {
+                    is_equipped = true;
+                    break;
+                }
+                i += 1;
+            };
+            assert(is_equipped, 'ITEM_NOT_EQUIPPED');
+
+            // Verify the item is consumable
+            assert(gear.is_consumable(), 'ITEM_NOT_CONSUMABLE');
+
+            // Apply item effects based on type
+            let item_type = parse_gear_type(gear.asset_id);
+            match item_type {
+                GearType::HealthPotion => {
+                    let heal_amount: u256 = 100;
+                    let new_hp = if player.hp + heal_amount > player.max_hp {
+                        player.max_hp
+                    } else {
+                        player.hp + heal_amount
+                    };
+                    player.hp = new_hp;
+                },
+                GearType::XpBooster => {
+                    let xp_amount: u256 = 200;
+                    player.add_xp(xp_amount);
+                },
+                GearType::EnergyDrink => {
+                    // Temporary stat boost - increase max HP temporarily
+                    let boost_amount: u256 = 50;
+                    player.max_hp += boost_amount;
+                    player.hp += boost_amount;
+                },
+                GearType::RepairKit => {// Repair all equipped gear (placeholder - would need durability system)
+                // For now, just emit an event
+                },
+                GearType::Stimpack => {
+                    // Damage boost - would need temporary effects system
+                    // For now, heal and add XP
+                    let heal_amount: u256 = 50;
+                    player
+                        .hp =
+                            if player.hp + heal_amount > player.max_hp {
+                                player.max_hp
+                            } else {
+                                player.hp + heal_amount
+                            };
+                    player.add_xp(100);
+                },
+                GearType::ArmorRepair => {// Repair armor durability (placeholder)
+                },
+                GearType::WeaponOil => {// Enhance weapon performance temporarily (placeholder)
+                },
+                _ => { assert(false, 'INVALID_CONSUMABLE_TYPE'); },
+            }
+
+            // Remove item from player's equipped list
+            let mut new_equipped: Array<u256> = array![];
+            let mut i = 0;
+            while i < player.equipped.len() {
+                let equipped_item = *player.equipped.at(i);
+                if equipped_item != item_id {
+                    new_equipped.append(equipped_item);
+                }
+                i += 1;
+            };
+            player.equipped = new_equipped;
+
+            // Burn the item - reduce total_count or remove completely
+            let erc1155_address = ContractAddressDefault::default();
+            erc1155mint(erc1155_address).burn(caller, item_id, 1);
+
+            // Update player state
+            world.write_model(@player);
+
+            // Emit ItemUsed event
+            world
+                .emit_event(
+                    @ItemUsed {
+                        player_id: caller,
+                        item_id: item_id,
+                        target_id: target_id,
+                        item_type: item_type,
+                    },
+                );
+        }
+
+        fn wield_item(ref self: ContractState, item_id: u256, session_id: felt252) {
+            // Validate session before proceeding
+            self.validate_session_for_action(session_id);
+
+            let mut world = self.world_default();
+            let caller = get_caller_address();
+            let mut player: crate::models::player::Player = world.read_model(caller);
+            let gear: Gear = world.read_model(item_id);
+
+            // Verify the item exists and player owns it
+            assert(gear.owner == caller, 'ITEM_NOT_OWNED');
+
+            // Verify the item is equipped before wielding
+            let mut is_equipped = false;
+            let mut i = 0;
+            while i < player.equipped.len() {
+                if *player.equipped.at(i) == item_id {
+                    is_equipped = true;
+                    break;
+                }
+                i += 1;
+            };
+            assert(is_equipped, 'ITEM_NOT_EQUIPPED');
+
+            // Verify the item can be wielded
+            assert(gear.is_wieldable(), 'ITEM_NOT_WIELDABLE');
+
+            // Set item as "in_action" to indicate it's being wielded
+            let mut updated_gear = gear;
+            updated_gear.in_action = true;
+            world.write_model(@updated_gear);
+
+            // Emit ItemWielded event
+            world.emit_event(@ItemWielded { player_id: caller, item_id: item_id });
+        }
     }
 
     #[generate_trait]
@@ -332,6 +495,10 @@ pub mod GearActions {
             ref self: ContractState, item_id: u256,
         ) { // this function should probably return an enum
         // or use an external function in the helper trait that returns an enum
+        }
+
+        fn erc1155mint(contract_address: ContractAddress) -> IERC1155MintableDispatcher {
+            IERC1155MintableDispatcher { contract_address }
         }
 
         fn _initialize_gear_assets(ref self: ContractState, ref world: WorldStorage) {
