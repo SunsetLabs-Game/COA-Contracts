@@ -1,12 +1,14 @@
 use core::num::traits::Zero;
-use coa::models::gear::{Gear, GearTrait, GearType, parse_gear_type};
+use coa::models::gear::{Gear, GearTrait, GearType};
 use coa::models::player::{Player, PlayerTrait};
+use coa::helpers::gear::parse_id;
 use starknet::contract_address_const;
 
 // Test constants
 const PLAYER_ADDRESS: felt252 = 0x123456789;
 const HEALTH_POTION_ID: u256 = u256 { low: 0x0001, high: 0x90000 }; // HealthPotion
 const XP_BOOSTER_ID: u256 = u256 { low: 0x0001, high: 0x90001 }; // XpBooster
+const ENERGY_DRINK_ID: u256 = u256 { low: 0x0001, high: 0x90002 }; // EnergyDrink
 const SWORD_ID: u256 = u256 { low: 0x0001, high: 0x102 }; // Sword
 const FIREARM_ID: u256 = u256 { low: 0x0001, high: 0x104 }; // Firearm
 
@@ -63,6 +65,22 @@ mod use_wield_item_tests {
         }
     }
 
+    fn sample_energy_drink() -> Gear {
+        Gear {
+            id: ENERGY_DRINK_ID,
+            item_type: 'CONSUMABLE',
+            asset_id: ENERGY_DRINK_ID,
+            variation_ref: 1,
+            total_count: 1,
+            in_action: false,
+            upgrade_level: 0,
+            owner: contract_address_const::<PLAYER_ADDRESS>(),
+            max_upgrade_level: 5,
+            min_xp_needed: 0,
+            spawned: false,
+        }
+    }
+
     fn sample_sword() -> Gear {
         Gear {
             id: SWORD_ID,
@@ -97,19 +115,22 @@ mod use_wield_item_tests {
 
     #[test]
     fn test_parse_gear_type_consumables() {
-        let health_potion_type = parse_gear_type(HEALTH_POTION_ID);
+        let health_potion_type = parse_id(HEALTH_POTION_ID);
         assert(health_potion_type == GearType::HealthPotion, 'Wrong HealthPotion type');
 
-        let xp_booster_type = parse_gear_type(XP_BOOSTER_ID);
+        let xp_booster_type = parse_id(XP_BOOSTER_ID);
         assert(xp_booster_type == GearType::XpBooster, 'Wrong XpBooster type');
+
+        let energy_drink_type = parse_id(ENERGY_DRINK_ID);
+        assert(energy_drink_type == GearType::EnergyDrink, 'Wrong EnergyDrink type');
     }
 
     #[test]
     fn test_parse_gear_type_weapons() {
-        let sword_type = parse_gear_type(SWORD_ID);
+        let sword_type = parse_id(SWORD_ID);
         assert(sword_type == GearType::Sword, 'Wrong Sword type');
 
-        let firearm_type = parse_gear_type(FIREARM_ID);
+        let firearm_type = parse_id(FIREARM_ID);
         assert(firearm_type == GearType::Firearm, 'Wrong Firearm type');
     }
 
@@ -135,6 +156,10 @@ mod use_wield_item_tests {
 
         let health_potion = sample_health_potion();
         assert(!health_potion.is_wieldable(), 'HealthPotion should not be wieldable');
+
+        let energy_drink = sample_energy_drink();
+        assert(energy_drink.is_consumable(), 'EnergyDrink should be consumable');
+        assert(!energy_drink.is_wieldable(), 'EnergyDrink should not be wieldable');
     }
 
     #[test]
@@ -200,6 +225,23 @@ mod use_wield_item_tests {
     }
 
     #[test]
+    fn test_energy_drink_effect() {
+        let mut player = sample_player_with_equipped_items();
+        let initial_hp = player.hp; // 300
+        let initial_max_hp = player.max_hp; // 500
+
+        // Simulate using energy drink (boost max HP by 50 and current HP by 50)
+        let boost_amount: u256 = 50;
+        player.max_hp += boost_amount;
+        player.hp += boost_amount;
+
+        assert(player.max_hp == initial_max_hp + boost_amount, 'Max HP should increase by 50');
+        assert(player.hp == initial_hp + boost_amount, 'HP should increase by 50');
+        assert(player.hp == 350, 'HP should be 350 after energy drink');
+        assert(player.max_hp == 550, 'Max HP should be 550 after energy drink');
+    }
+
+    #[test]
     fn test_remove_item_from_equipped() {
         let mut player = sample_player_with_equipped_items();
         let initial_equipped_count = player.equipped.len();
@@ -251,6 +293,7 @@ mod use_wield_item_tests {
         // Test that consumable items use correct u256.high values
         assert(HEALTH_POTION_ID.high == 0x90000, 'HealthPotion should use 0x90000 high');
         assert(XP_BOOSTER_ID.high == 0x90001, 'XpBooster should use 0x90001 high');
+        assert(ENERGY_DRINK_ID.high == 0x90002, 'EnergyDrink should use 0x90002 high');
 
         // Test that weapons use correct u256.high values
         assert(SWORD_ID.high == 0x102, 'Sword should use 0x102 high');

@@ -8,10 +8,11 @@ pub mod GearActions {
     use starknet::get_caller_address;
     use dojo::world::WorldStorage;
     use dojo::model::ModelStorage;
-    use crate::models::gear::{Gear, GearProperties, GearType, parse_gear_type};
-    use crate::models::core::Operator;
+    use crate::models::gear::{Gear, GearProperties, GearType};
+    use crate::models::core::{Operator, Contract};
     use crate::helpers::base::generate_id;
     use crate::helpers::base::ContractAddressDefault;
+    use crate::helpers::gear::parse_id;
     // Import session model for validation
     use crate::models::session::SessionKey;
     // Import ERC1155 interface for burning items
@@ -53,6 +54,7 @@ pub mod GearActions {
         pub player_id: ContractAddress,
         #[key]
         pub item_id: u256,
+        pub wielded: bool,
     }
 
 
@@ -210,7 +212,8 @@ pub mod GearActions {
             player.init('default');
 
             let mut successfully_picked: Array<u256> = array![];
-            let erc1155_address = ContractAddressDefault::default();
+            let contract: Contract = world.read_model('CONTRACT');
+            let erc1155_address = contract.erc1155;
 
             let has_vehicle = player.has_vehicle_equipped();
 
@@ -307,7 +310,7 @@ pub mod GearActions {
             assert(gear.is_consumable(), 'ITEM_NOT_CONSUMABLE');
 
             // Apply item effects based on type
-            let item_type = parse_gear_type(gear.asset_id);
+            let item_type = parse_id(gear.asset_id);
             match item_type {
                 GearType::HealthPotion => {
                     let heal_amount: u256 = 100;
@@ -328,7 +331,7 @@ pub mod GearActions {
                     player.max_hp += boost_amount;
                     player.hp += boost_amount;
                 },
-                GearType::RepairKit => {// Repair all equipped gear (placeholder - would need durability system)
+                GearType::RepairKit => { // Repair all equipped gear (placeholder - would need durability system)
                 // For now, just emit an event
                 },
                 GearType::Stimpack => {
@@ -344,9 +347,9 @@ pub mod GearActions {
                             };
                     player.add_xp(100);
                 },
-                GearType::ArmorRepair => {// Repair armor durability (placeholder)
+                GearType::ArmorRepair => { // Repair armor durability (placeholder)
                 },
-                GearType::WeaponOil => {// Enhance weapon performance temporarily (placeholder)
+                GearType::WeaponOil => { // Enhance weapon performance temporarily (placeholder)
                 },
                 _ => { assert(false, 'INVALID_CONSUMABLE_TYPE'); },
             }
@@ -364,10 +367,21 @@ pub mod GearActions {
             player.equipped = new_equipped;
 
             // Burn the item - reduce total_count or remove completely
-            let erc1155_address = ContractAddressDefault::default();
-            erc1155mint(erc1155_address).burn(caller, item_id, 1);
+            let contract: Contract = world.read_model('CONTRACT');
+            let erc1155_address = contract.erc1155;
+            let erc1155_contract = IERC1155MintableDispatcher { contract_address: erc1155_address };
+            erc1155_contract.burn(caller, item_id, 1);
 
-            // Update player state
+            // Update player and gear state
+            let mut updated_gear = gear;
+            if updated_gear.total_count > 1 {
+                updated_gear.total_count = updated_gear.total_count - 1;
+            } else {
+                // Clear ownership for fully consumed item
+                updated_gear.owner = ContractAddressDefault::default();
+                updated_gear.spawned = false;
+            }
+            world.write_model(@updated_gear);
             world.write_model(@player);
 
             // Emit ItemUsed event
@@ -415,7 +429,7 @@ pub mod GearActions {
             world.write_model(@updated_gear);
 
             // Emit ItemWielded event
-            world.emit_event(@ItemWielded { player_id: caller, item_id: item_id });
+            world.emit_event(@ItemWielded { player_id: caller, item_id: item_id, wielded: true });
         }
     }
 

@@ -336,6 +336,10 @@ pub impl BodyImpl of BodyTrait {
             },
             GearType::Weapon => *self.back == 0_u256,
             GearType::Vehicle => true, // yet to implement vehicle logic
+            // Consumables can be equipped in waist slots
+            GearType::HealthPotion | GearType::XpBooster | GearType::EnergyDrink |
+            GearType::RepairKit | GearType::Stimpack | GearType::ArmorRepair |
+            GearType::WeaponOil => self.waist.len() < WAIST_MAX_SLOTS,
             GearType::None => false,
         }
     }

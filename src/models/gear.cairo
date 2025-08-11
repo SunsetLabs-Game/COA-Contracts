@@ -29,7 +29,7 @@ pub struct Gear {
 }
 
 
-#[derive(Drop, Copy, Serde, PartialEq, Default)]
+#[derive(Drop, Copy, Serde, PartialEq, Default, Introspect)]
 pub enum GearType {
     #[default]
     None,
@@ -108,55 +108,27 @@ pub impl GearImpl of GearTrait {
 
     // Check if item is consumable
     fn is_consumable(self: @Gear) -> bool {
-        let item_type = parse_gear_type(*self.asset_id);
-        match item_type {
-            GearType::HealthPotion | GearType::XpBooster | GearType::EnergyDrink |
-            GearType::RepairKit | GearType::Stimpack | GearType::ArmorRepair |
-            GearType::WeaponOil => true,
-            _ => false,
-        }
+        let type_id = *self.asset_id.high;
+        type_id == 0x90000_u128
+            || type_id == 0x90001_u128
+            || type_id == 0x90002_u128
+            || type_id == 0x90003_u128
+            || type_id == 0x90004_u128
+            || type_id == 0x90005_u128
+            || type_id == 0x90006_u128
     }
 
     // Check if item can be wielded (non-consumable equipment)
     fn is_wieldable(self: @Gear) -> bool {
-        let item_type = parse_gear_type(*self.asset_id);
-        match item_type {
-            GearType::Weapon | GearType::BluntWeapon | GearType::Sword | GearType::Bow |
-            GearType::Firearm | GearType::Polearm | GearType::HeavyFirearms |
-            GearType::Explosives => true,
-            _ => false,
-        }
+        let type_id = *self.asset_id.high;
+        type_id == 0x1_u128
+            || type_id == 0x101_u128
+            || type_id == 0x102_u128
+            || type_id == 0x103_u128
+            || type_id == 0x104_u128
+            || type_id == 0x105_u128
+            || type_id == 0x106_u128
+            || type_id == 0x107_u128
     }
 }
 
-// Helper function to parse gear type from asset_id
-fn parse_gear_type(asset_id: u256) -> GearType {
-    let type_id = asset_id.high;
-    match type_id {
-        0x1 => GearType::Weapon,
-        0x101 => GearType::BluntWeapon,
-        0x102 => GearType::Sword,
-        0x103 => GearType::Bow,
-        0x104 => GearType::Firearm,
-        0x105 => GearType::Polearm,
-        0x106 => GearType::HeavyFirearms,
-        0x107 => GearType::Explosives,
-        0x2000 => GearType::Helmet,
-        0x2001 => GearType::ChestArmor,
-        0x2002 => GearType::LegArmor,
-        0x2003 => GearType::Boots,
-        0x2004 => GearType::Gloves,
-        0x2005 => GearType::Shield,
-        0x30000 => GearType::Vehicle,
-        0x800000 => GearType::Pet,
-        0x800001 => GearType::Drone,
-        0x90000 => GearType::HealthPotion,
-        0x90001 => GearType::XpBooster,
-        0x90002 => GearType::EnergyDrink,
-        0x90003 => GearType::RepairKit,
-        0x90004 => GearType::Stimpack,
-        0x90005 => GearType::ArmorRepair,
-        0x90006 => GearType::WeaponOil,
-        _ => GearType::None,
-    }
-}
