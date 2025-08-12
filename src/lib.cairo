@@ -51,6 +51,7 @@ pub mod test {
     pub mod pick_item_test;
     pub mod player_session_integration_test;
     pub mod session_helper_test;
+    pub mod upgrade_gear_test;
 }
 
 pub mod traits {

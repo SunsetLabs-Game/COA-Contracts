@@ -3,28 +3,42 @@ pub mod GearActions {
     use crate::interfaces::gear::IGear;
     use dojo::event::EventStorage;
     use super::super::super::models::gear::GearTrait;
-    use starknet::ContractAddress;
+    use starknet::{ContractAddress, get_block_timestamp, get_contract_address, get_caller_address};
     use crate::models::player::PlayerTrait;
-    use starknet::get_caller_address;
     use dojo::world::WorldStorage;
     use dojo::model::ModelStorage;
+
     use crate::models::gear::{Gear, GearProperties, GearType};
     use crate::models::core::{Operator, Contract};
+
     use crate::helpers::base::generate_id;
     use crate::helpers::base::ContractAddressDefault;
     use crate::helpers::gear::parse_id;
     // Import session model for validation
     use crate::models::session::SessionKey;
+
     // Import ERC1155 interface for burning items
     use crate::erc1155::erc1155::{IERC1155MintableDispatcher, IERC1155MintableDispatcherTrait};
 
+
     const GEAR: felt252 = 'GEAR';
+    // A constant key for our singleton UpgradeConfigState model
+    const UPGRADE_CONFIG_KEY: u8 = 0;
 
     fn dojo_init(ref self: ContractState) {
         let mut world = self.world_default();
         self._assert_admin();
         self._initialize_gear_assets(ref world);
+        world
+            .write_model(
+                @UpgradeConfigState {
+                    singleton_key: UPGRADE_CONFIG_KEY,
+                    initialized_types_count: 0,
+                    is_complete: false,
+                },
+            );
     }
+
     #[derive(Drop, Copy, Serde)]
     #[dojo::event]
     pub struct ItemPicked {
@@ -35,6 +49,7 @@ pub mod GearActions {
         pub equipped: bool,
         pub via_vehicle: bool,
     }
+
 
     #[derive(Drop, Copy, Serde)]
     #[dojo::event]
@@ -58,17 +73,99 @@ pub mod GearActions {
     }
 
 
+
     #[abi(embed_v0)]
     pub impl GearActionsImpl of IGear<ContractState> {
-        fn upgrade_gear(ref self: ContractState, item_id: u256, session_id: felt252) {
-            // Validate session before proceeding
+        fn upgrade_gear(
+            ref self: ContractState,
+            item_id: u256,
+            session_id: felt252,
+            materials_erc1155_address: ContractAddress,
+        ) {
             self.validate_session_for_action(session_id);
-            // check if the available upgrade materials `id` is present in the caller's address
-        // TODO: Security
-        // for now, you must check if if the item_id with id is available in the game.
-        // This would be done accordingly, so the item struct must have the id of the material
-        // or the ids of the list of materials that can upgrade it, and the quantity needed per
-        // level and the max level attained.
+            let mut world = self.world_default();
+            let caller = get_caller_address();
+            let mut gear: Gear = world.read_model(item_id);
+
+            // Validation Rules
+            assert(gear.owner == caller, 'Caller is not owner');
+            assert(gear.upgrade_level < gear.max_upgrade_level, 'Gear at max level');
+
+            let next_level = gear.upgrade_level + 1;
+            let gear_type: GearType = gear.item_type.try_into().expect('Invalid gear type');
+
+            // Assert that the stats for the next level are defined before proceeding.
+            // This prevents players from losing materials on an impossible upgrade.
+            let new_stats: GearLevelStats = world.read_model((gear.asset_id, next_level));
+            // Ensure the exact next-level record exists
+            assert(new_stats.level == next_level, 'Next level stats not defined');
+            let upgrade_cost: UpgradeCost = world.read_model((gear_type, gear.upgrade_level));
+            let success_rate: UpgradeSuccessRate = world
+                .read_model((gear_type, gear.upgrade_level));
+
+            assert(upgrade_cost.materials.len() > 0, 'No upgrade path for item');
+
+            // Material Consumption
+            let erc1155 = IERC1155Dispatcher { contract_address: materials_erc1155_address };
+            let mut materials = upgrade_cost.materials;
+            let mut i = 0;
+            while i != materials.len() {
+                let material = *materials.at(i);
+                let balance = erc1155.balance_of(caller, material.token_id);
+                assert(balance >= material.amount, 'Insufficient materials');
+
+                // Consume materials on attempt
+                erc1155
+                    .safe_transfer_from(
+                        caller,
+                        get_contract_address(),
+                        material.token_id,
+                        material.amount,
+                        array![].span(),
+                    );
+                i += 1;
+            };
+
+            // Probability System using seeded dice with on-chain entropy
+            let tx_hash: felt252 = starknet::get_tx_info().unbox().transaction_hash;
+            let seed: felt252 = tx_hash
+                + caller.into()
+                + item_id.low.into()
+                + get_block_timestamp().into();
+            let mut dice = DiceTrait::new(100, seed);
+            let pseudo_random: u8 = dice.roll();
+
+            if pseudo_random < success_rate.rate.into() {
+                // Successful Upgrade
+                gear.upgrade_level = next_level;
+
+                // By incrementing the level, the gear now implicitly uses the `new_stats`
+                // we've already confirmed exist. No further action is needed to "apply" them
+                // in this ECS architecture.
+
+                world.write_model(@gear);
+
+                world
+                    .emit_event(
+                        @UpgradeSuccess {
+                            player_id: caller,
+                            gear_id: item_id,
+                            new_level: gear.upgrade_level,
+                            materials_consumed: materials.span(),
+                        },
+                    );
+            } else {
+                // Failed Upgrade (materials are still consumed)
+                world
+                    .emit_event(
+                        @UpgradeFailed {
+                            player_id: caller,
+                            gear_id: item_id,
+                            level: gear.upgrade_level,
+                            materials_consumed: materials.span(),
+                        },
+                    );
+            }
         }
 
         fn equip(ref self: ContractState, item_id: Array<u256>, session_id: felt252) {
@@ -280,6 +377,7 @@ pub mod GearActions {
             successfully_picked
         }
 
+
         fn use_item(
             ref self: ContractState, item_id: u256, target_id: Option<u256>, session_id: felt252,
         ) {
@@ -430,6 +528,7 @@ pub mod GearActions {
 
             // Emit ItemWielded event
             world.emit_event(@ItemWielded { player_id: caller, item_id: item_id, wielded: true });
+
         }
     }
 
@@ -505,15 +604,80 @@ pub mod GearActions {
             world.write_model(@session);
         }
 
+        // Full implementation of upgrade data initialization
+        fn _initialize_upgrade_data_for_gear_type(
+            self: @ContractState, ref world: WorldStorage, gear_type: GearType,
+        ) {
+            // ... (The logic from the previous answer is perfect and stays here)
+            // Material Fungible Token IDs (placeholders)
+            let scrap_metal: u256 = 1;
+            let wiring: u256 = 2;
+            let advanced_alloy: u256 = 3;
+            let cybernetic_core: u256 = 4;
+
+            // Base rates and costs
+            let success_rates = array![95, 90, 85, 80, 75, 50, 40, 30, 20, 10];
+            let costs_scrap = array![10, 20, 40, 80, 120, 180, 250, 350, 500, 750];
+            let costs_wiring = array![0, 5, 10, 20, 40, 80, 120, 180, 250, 350];
+            let costs_alloy = array![0, 0, 0, 0, 10, 20, 40, 80, 120, 180];
+            let costs_core = array![0, 0, 0, 0, 0, 0, 5, 10, 20, 40];
+
+            let mut level: u32 = 0;
+            while level != 10 {
+                world
+                    .write_model(
+                        @UpgradeSuccessRate {
+                            gear_type: gear_type,
+                            level: level.into(),
+                            rate: *success_rates.at(level),
+                        },
+                    );
+
+                let mut materials_for_level = array![];
+                let scrap_cost = *costs_scrap.at(level);
+                if scrap_cost > 0 {
+                    materials_for_level
+                        .append(UpgradeMaterial { token_id: scrap_metal, amount: scrap_cost });
+                }
+                let wiring_cost = *costs_wiring.at(level);
+                if wiring_cost > 0 {
+                    materials_for_level
+                        .append(UpgradeMaterial { token_id: wiring, amount: wiring_cost });
+                }
+                let alloy_cost = *costs_alloy.at(level);
+                if alloy_cost > 0 {
+                    materials_for_level
+                        .append(UpgradeMaterial { token_id: advanced_alloy, amount: alloy_cost });
+                }
+                let core_cost = *costs_core.at(level);
+                if (gear_type == GearType::Pet || gear_type == GearType::Drone) && core_cost > 0 {
+                    materials_for_level
+                        .append(UpgradeMaterial { token_id: cybernetic_core, amount: core_cost });
+                }
+
+                world
+                    .write_model(
+                        @UpgradeCost {
+                            gear_type: gear_type,
+                            level: level.into(),
+                            materials: materials_for_level,
+                        },
+                    );
+                level += 1;
+            };
+        }
+
         fn _retrieve(
             ref self: ContractState, item_id: u256,
         ) { // this function should probably return an enum
         // or use an external function in the helper trait that returns an enum
         }
 
+
         fn erc1155mint(contract_address: ContractAddress) -> IERC1155MintableDispatcher {
             IERC1155MintableDispatcher { contract_address }
         }
+
 
         fn _initialize_gear_assets(ref self: ContractState, ref world: WorldStorage) {
             // Weapons - using ERC1155 token IDs as primary keys

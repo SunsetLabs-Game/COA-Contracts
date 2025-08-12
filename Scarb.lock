@@ -14,6 +14,7 @@ dependencies = [
  "dojo",
  "dojo_cairo_test",
  "openzeppelin",
+ "origami_random",
 ]
 
 [[package]]
@@ -155,3 +156,8 @@ name = "openzeppelin_utils"
 version = "1.0.0"
 source = "registry+https://scarbs.xyz/"
 checksum = "sha256:fd348b31c4a4407add33adc3c2b8f26dca71dbd7431faaf726168f37a91db0c1"
+
+[[package]]
+name = "origami_random"
+version = "1.1.2"
+source = "git+https://github.com/dojoengine/origami?tag=v1.6.1#81e49e9db43e8528cbb5d914e4da3479a9f02fb8"

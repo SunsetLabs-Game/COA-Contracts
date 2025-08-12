@@ -8,6 +8,7 @@ use openzeppelin::token::erc1155::interface::{IERC1155Dispatcher, IERC1155Dispat
 use crate::erc1155::erc1155::{IERC1155MintableDispatcher, IERC1155MintableDispatcherTrait};
 use starknet::ContractAddress;
 use dojo::world::WorldStorage;
+use core::traits::{Into, TryInto};
 
 #[dojo::model]
 #[derive(Drop, Copy, Default, Serde)]
@@ -71,6 +72,63 @@ pub struct GearProperties {
     // asset: Gear,
 }
 
+// This model stores the pre-calculated stats for each level of a specific asset.
+#[dojo::model]
+#[derive(Drop, Copy, Default, Serde)]
+pub struct GearLevelStats {
+    #[key]
+    pub asset_id: u256, // The specific asset, e.g., Iron Sword
+    #[key]
+    pub level: u64, // The level for which these stats apply
+    // --- Pre-calculated Stat Fields ---
+    pub damage: u64,
+    pub range: u64,
+    pub accuracy: u64,
+    pub fire_rate: u64,
+    pub defense: u64,
+    pub durability: u64,
+    pub weight: u64,
+}
+
+// Struct to define a material required for an upgrade
+#[derive(Drop, Copy, Serde, Introspect)]
+pub struct UpgradeMaterial {
+    pub token_id: u256,
+    pub amount: u256,
+}
+
+// Model to store upgrade costs for each gear type and level
+#[dojo::model]
+#[derive(Drop, Serde)]
+pub struct UpgradeCost {
+    #[key]
+    pub gear_type: GearType,
+    #[key]
+    pub level: u64,
+    pub materials: Array<UpgradeMaterial>,
+}
+
+// Model to store success rates for each gear type and level
+#[dojo::model]
+#[derive(Drop, Serde)]
+pub struct UpgradeSuccessRate {
+    #[key]
+    pub gear_type: GearType,
+    #[key]
+    pub level: u64,
+    pub rate: u8,
+}
+
+// Model to track the state of the upgrade data initialization process.
+#[dojo::model]
+#[derive(Drop, Copy, Serde, Default)]
+pub struct UpgradeConfigState {
+    #[key]
+    pub singleton_key: u8, // Always 0, to ensure only one instance exists.
+    pub initialized_types_count: u32,
+    pub is_complete: bool,
+}
+
 // for now, all items would implement this trait
 // move this trait and it's impl to `helpers/gear.cairo`
 
@@ -131,4 +189,6 @@ pub impl GearImpl of GearTrait {
             || type_id == 0x107_u128
     }
 }
+
+
 
