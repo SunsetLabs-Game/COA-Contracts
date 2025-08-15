@@ -6,17 +6,14 @@ use crate::erc1155::erc1155::{IERC1155MintableDispatcher, IERC1155MintableDispat
 use crate::types::player::{PlayerRank, PlayerRankTrait};
 use crate::types::base::{CREDITS};
 use dojo::world::{WorldStorage};
+use crate::helpers::body::BodyTrait;
 use crate::models::gear::GearType;
-use crate::helpers::gear::{parse_id, count_gear_in_array, contains_gear_type};
+use crate::helpers::gear::{parse_id};
 
 const DEFAULT_HP: u256 = 500;
-const DEFAULT_MAX_EQUIPPABLE_SLOT: u32 = 10;
+pub const DEFAULT_MAX_EQUIPPABLE_SLOT: u32 = 10;
 const WAIST_MAX_SLOTS: u32 = 8;
-const MAX_EXPLOSIVES_SLOTS: u32 = 6;
-const MAX_MELEE_WEAPON_SLOTS: u32 = 3;
-const HAND_MAX_COUNT: u32 = 2;
-const MAX_FIREARM_SLOTS: u32 = 2;
-const MAX_OFF_BODY_SLOTS: u32 = 1;
+
 
 #[derive(Drop, Clone, Serde, Debug, Default, Introspect)]
 pub struct Body {
@@ -32,7 +29,8 @@ pub struct Body {
     pub waist: Array<u256>, // Max 8 slots for now.
     pub feet: Array<u256>, // For Boots
     // Non-body-worn gear
-    pub off_body: Array<u256> // For drones/pets/AI companions — max 1 item
+    pub off_body: Array<u256>, // For drones/pets/AI companions — max 1 item
+    pub vehicle: u256,
 }
 
 #[dojo::model]
@@ -217,19 +215,14 @@ pub impl PlayerImpl of PlayerTrait {
     }
 
     fn equip(ref self: Player, item_id: u256) {
-        assert(item_id.is_non_zero(), Errors::INVALID_ITEM_ID);
-
-        // check if the item is equippable
-        assert(self.is_equippable(item_id), Errors::CANNOT_EQUIP);
-
         // check if the player has enough slots to equip this item
         assert(self.equipped.len() < self.max_equip_slot, Errors::INSUFFICIENT_SLOTS);
-
         self.body.equip_item(item_id);
 
         // add the item to the equipped list
         self.equipped.append(item_id);
     }
+
     fn is_equipped(self: Player, type_id: u128) -> u256 {
         // let equipped = self.equipped; // use this array to check if the item is equipped
         self.body.get_equipped_item(type_id)
@@ -285,6 +278,7 @@ pub impl PlayerImpl of PlayerTrait {
 //     assert()
 // }
 }
+
 
 #[generate_trait]
 pub impl BodyImpl of BodyTrait {
@@ -419,6 +413,7 @@ pub impl BodyImpl of BodyTrait {
     }
 }
 
+
 fn erc1155(contract_address: ContractAddress) -> IERC1155Dispatcher {
     IERC1155Dispatcher { contract_address }
 }
@@ -432,6 +427,13 @@ pub mod Errors {
     pub const INVALID_ITEM_ID: felt252 = 'INVALID ITEM ID';
     pub const CANNOT_EQUIP: felt252 = 'CANNOT EQUIP';
     pub const INSUFFICIENT_SLOTS: felt252 = 'INSUFFICIENT EQUIP SLOTS';
+    pub const OUT_ITEM_NOT_EQUIPPED: felt252 = 'OUT ITEM NOT EQUIPPED';
+    pub const OUT_ITEM_NOT_OWNED: felt252 = 'OUT ITEM NOT OWNED';
+    pub const IN_ITEM_NOT_OWNED: felt252 = 'IN ITEM NOT OWNED';
+    pub const IN_ITEM_ALREADY_EQUIPPED: felt252 = 'IN ITEM ALREADY EQUIPPED';
+    pub const VEHICLE_NOT_EQUIPPED: felt252 = 'VEHICLE NOT EQUIPPED';
+    pub const ITEM_TOKEN_NOT_OWNED: felt252 = 'PLAYER NOT OWNER OF ITEM TOKEN';
+    pub const IN_ITEM_SAME_AS_OUT_ITEM: felt252 = 'IN ITEM SAME AS OUT ITEM';
 }
 
 // Helper function to get the high 128 bits from a u256

@@ -18,6 +18,7 @@ pub struct Contract {
     pub erc1155: ContractAddress,
     pub payment_token: ContractAddress,
     pub escrow_address: ContractAddress,
+    pub warehouse: ContractAddress,
     pub registration_fee: u256,
     pub paused: bool,
 }

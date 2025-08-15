@@ -33,6 +33,7 @@ pub mod CoreActions {
         payment_token: ContractAddress,
         escrow_address: ContractAddress,
         registration_fee: u256,
+        warehouse: ContractAddress,
     ) {
         let mut world = self.world(@"coa_contracts");
 
@@ -49,6 +50,7 @@ pub mod CoreActions {
             escrow_address,
             registration_fee,
             paused: false,
+            warehouse,
         };
         world.write_model(@contract);
     }
