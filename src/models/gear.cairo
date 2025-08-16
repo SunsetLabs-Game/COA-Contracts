@@ -121,6 +121,15 @@ pub struct UpgradeConfigState {
     pub is_complete: bool,
 }
 
+#[dojo::model]
+#[derive(Drop, Copy, Serde, Default)]
+pub struct GearTypeCounter {
+    #[key]
+    pub gear_type_id: u128,
+    pub count: u128,
+}
+
+
 // for now, all items would implement this trait
 // move this trait and it's impl to `helpers/gear.cairo`
 
@@ -182,6 +191,32 @@ impl GearTypeIntoFelt252 of Into<GearType, felt252> {
         }
     }
 }
+
+impl GearTypeIntoU256 of Into<GearType, u256> {
+    fn into(self: GearType) -> u256 {
+        match self {
+            GearType::None => u256 { low: 0, high: 0 },
+            GearType::Weapon => u256 { low: 0, high: 0x1 },
+            GearType::BluntWeapon => u256 { low: 0, high: 0x101 },
+            GearType::Sword => u256 { low: 0, high: 0x102 },
+            GearType::Bow => u256 { low: 0, high: 0x103 },
+            GearType::Firearm => u256 { low: 0, high: 0x104 },
+            GearType::Polearm => u256 { low: 0, high: 0x105 },
+            GearType::HeavyFirearms => u256 { low: 0, high: 0x106 },
+            GearType::Explosives => u256 { low: 0, high: 0x107 },
+            GearType::Helmet => u256 { low: 0, high: 0x2000 },
+            GearType::ChestArmor => u256 { low: 0, high: 0x2001 },
+            GearType::LegArmor => u256 { low: 0, high: 0x2002 },
+            GearType::Boots => u256 { low: 0, high: 0x2003 },
+            GearType::Gloves => u256 { low: 0, high: 0x2004 },
+            GearType::Shield => u256 { low: 0, high: 0x2005 },
+            GearType::Vehicle => u256 { low: 0, high: 0x30000 },
+            GearType::Pet => u256 { low: 0, high: 0x800000 },
+            GearType::Drone => u256 { low: 0, high: 0x800001 },
+        }
+    }
+}
+
 
 // Implementation of conversion from felt252 to GearType
 impl Felt252TryIntoGearType of TryInto<felt252, GearType> {

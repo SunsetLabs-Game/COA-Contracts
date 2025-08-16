@@ -60,6 +60,10 @@ pub trait IGear<TContractState> {
         ref self: TContractState, item_id: Array<u256>, session_id: felt252,
     ) -> Array<u256>; // returns an array of items that were picked
 
+    // adds an item to the list of items
+
+    fn random_gear_generator(ref self: TContractState, session_id: felt252) -> Gear;
+
     // Core item detail operations
     fn get_gear_details_complete(
         ref self: TContractState, item_id: u256, session_id: felt252,
