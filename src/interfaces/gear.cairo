@@ -60,85 +60,12 @@ pub trait IGear<TContractState> {
         ref self: TContractState, item_id: Array<u256>, session_id: felt252,
     ) -> Array<u256>; // returns an array of items that were picked
 
-    // Core item detail operations
-    fn get_gear_details_complete(
-        ref self: TContractState, item_id: u256, session_id: felt252,
-    ) -> Option<GearDetailsComplete>;
+    // adds an item to the list of items
+    fn use_item(
+        ref self: TContractState, item_id: u256, target_id: Option<u256>, session_id: felt252,
+    );
+    fn wield_item(ref self: TContractState, item_id: u256, session_id: felt252);
 
-    fn get_gear_details_batch(
-        ref self: TContractState, item_ids: Array<u256>, session_id: felt252,
-    ) -> Array<Option<GearDetailsComplete>>;
-
-    // Statistics and calculations
-    fn get_calculated_stats(
-        ref self: TContractState, item_id: u256, session_id: felt252,
-    ) -> Option<GearStatsCalculated>;
-
-    fn get_upgrade_preview(
-        ref self: TContractState, item_id: u256, target_level: u64, session_id: felt252,
-    ) -> Option<UpgradeInfo>;
-
-    // Inventory management
-    fn get_player_inventory(
-        ref self: TContractState,
-        player: ContractAddress,
-        filters: Option<GearFilters>,
-        pagination: Option<PaginationParams>,
-        sort: Option<SortParams>,
-        session_id: felt252,
-    ) -> PaginatedGearResult;
-
-    fn get_equipped_gear(
-        ref self: TContractState, player: ContractAddress, session_id: felt252,
-    ) -> CombinedEquipmentEffects;
-
-    // Available items discovery
-    fn get_available_items(
-        ref self: TContractState,
-        player_xp: u256,
-        filters: Option<GearFilters>,
-        pagination: Option<PaginationParams>,
-        session_id: felt252,
-    ) -> PaginatedGearResult;
-
-    // Upgrade planning
-    fn calculate_upgrade_costs(
-        ref self: TContractState, item_id: u256, target_level: u64, session_id: felt252,
-    ) -> Option<Array<(u256, u256)>>; // (token_id, total_amount)
-
-    fn check_upgrade_feasibility(
-        ref self: TContractState,
-        item_id: u256,
-        target_level: u64,
-        player_materials: Array<(u256, u256)>, // (token_id, available_amount)
-        session_id: felt252,
-    ) -> (bool, Array<(u256, u256)>); // (feasible, missing_materials)
-
-    // Filtering and search
-    fn filter_gear_by_type(
-        ref self: TContractState,
-        gear_type: GearType,
-        pagination: Option<PaginationParams>,
-        session_id: felt252,
-    ) -> PaginatedGearResult;
-
-    fn search_gear_by_criteria(
-        ref self: TContractState,
-        filters: GearFilters,
-        pagination: Option<PaginationParams>,
-        sort: Option<SortParams>,
-        session_id: felt252,
-    ) -> PaginatedGearResult;
-
-    // Comparison utilities
-    fn compare_gear_stats(
-        ref self: TContractState, item_ids: Array<u256>, session_id: felt252,
-    ) -> Array<GearStatsCalculated>;
-
-    // Performance optimized queries
-    fn get_gear_summary(
-        ref self: TContractState, item_id: u256, session_id: felt252,
-    ) -> Option<(Gear, u64, u64, u64)>; // (gear, total_damage, total_defense, total_weight)
 }
 /// TODO: Implement gear levels: Rare, Mythical, etc... these levels would determine its base stats
 /// and the max upgradeable stats.

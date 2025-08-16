@@ -9,24 +9,23 @@ pub mod GearActions {
     use crate::models::player::{Player, PlayerTrait};
     use dojo::world::WorldStorage;
     use dojo::model::ModelStorage;
-    use crate::models::gear::{
-        Gear, GearProperties, GearType, UpgradeCost, UpgradeSuccessRate, UpgradeMaterial,
-        GearLevelStats, UpgradeConfigState, GearDetailsComplete, GearStatsCalculated, UpgradeInfo,
-        OwnershipStatus, GearFilters, OwnershipFilter, PaginationParams, SortParams, SortField,
-        PaginatedGearResult, CombinedEquipmentEffects, EquipmentSlotInfo,
-    };
-    use crate::models::weapon_stats::WeaponStats;
-    use crate::models::armor_stats::Armor;
-    use crate::models::vehicle_stats::VehicleStats;
-    use crate::models::pet_stats::PetStats;
-    use crate::models::core::Operator;
+
+
+    use crate::models::gear::{Gear, GearProperties, GearType};
+    use crate::models::core::{Operator, Contract};
+
+
     use crate::helpers::base::generate_id;
     use crate::helpers::base::ContractAddressDefault;
+    use crate::helpers::gear::parse_id;
     // Import session model for validation
     use crate::models::session::SessionKey;
-    use openzeppelin::token::erc1155::interface::{IERC1155Dispatcher, IERC1155DispatcherTrait};
-    use origami_random::dice::{Dice, DiceTrait};
-    use core::num::traits::Zero;
+
+
+    // Import ERC1155 interface for burning items
+    use crate::erc1155::erc1155::{IERC1155MintableDispatcher, IERC1155MintableDispatcherTrait};
+
+
 
     const GEAR: felt252 = 'GEAR';
     // A constant key for our singleton UpgradeConfigState model
@@ -57,27 +56,29 @@ pub mod GearActions {
         pub via_vehicle: bool,
     }
 
-    // Event for successful upgrades
+
     #[derive(Drop, Copy, Serde)]
     #[dojo::event]
-    pub struct UpgradeSuccess {
+    pub struct ItemUsed {
         #[key]
         pub player_id: ContractAddress,
-        pub gear_id: u256,
-        pub new_level: u64,
-        pub materials_consumed: Span<UpgradeMaterial> // Track what was consumed
+        #[key]
+        pub item_id: u256,
+        pub target_id: Option<u256>,
+        pub item_type: GearType,
     }
 
-    // Event for failed upgrades
     #[derive(Drop, Copy, Serde)]
     #[dojo::event]
-    pub struct UpgradeFailed {
+    pub struct ItemWielded {
         #[key]
         pub player_id: ContractAddress,
-        pub gear_id: u256,
-        pub level: u64,
-        pub materials_consumed: Span<UpgradeMaterial> // Track what was consumed
+        #[key]
+        pub item_id: u256,
+        pub wielded: bool,
     }
+
+
 
     #[abi(embed_v0)]
     pub impl GearActionsImpl of IGear<ContractState> {
@@ -314,7 +315,8 @@ pub mod GearActions {
             player.init('default');
 
             let mut successfully_picked: Array<u256> = array![];
-            let erc1155_address = ContractAddressDefault::default();
+            let contract: Contract = world.read_model('CONTRACT');
+            let erc1155_address = contract.erc1155;
 
             let has_vehicle = player.has_vehicle_equipped();
 
@@ -381,62 +383,158 @@ pub mod GearActions {
             successfully_picked
         }
 
-        // AUTOMATED BATCH INITIALIZATION FUNCTION
-        // The admin calls this function repeatedly without arguments.
-        // Each call processes a batch of GearTypes until all are initialized.
-        fn initialize_upgrade_data(ref self: ContractState) {
-            self._assert_admin();
+
+        fn use_item(
+            ref self: ContractState, item_id: u256, target_id: Option<u256>, session_id: felt252,
+        ) {
+            // Validate session before proceeding
+            self.validate_session_for_action(session_id);
+
             let mut world = self.world_default();
+            let caller = get_caller_address();
+            let mut player: crate::models::player::Player = world.read_model(caller);
+            let gear: Gear = world.read_model(item_id);
 
-            let mut config_state: UpgradeConfigState = world.read_model(UPGRADE_CONFIG_KEY);
-            assert(!config_state.is_complete, 'Initialization is complete');
+            // Verify the item exists and player owns it
+            assert(gear.owner == caller, 'ITEM_NOT_OWNED');
 
-            // Define the full list of gear types to be initialized
-            let gear_types = array![
-                GearType::Weapon,
-                GearType::BluntWeapon,
-                GearType::Sword,
-                GearType::Bow,
-                GearType::Firearm,
-                GearType::Polearm,
-                GearType::HeavyFirearms,
-                GearType::Explosives,
-                GearType::Helmet,
-                GearType::ChestArmor,
-                GearType::LegArmor,
-                GearType::Boots,
-                GearType::Gloves,
-                GearType::Shield,
-                GearType::Vehicle,
-                GearType::Pet,
-                GearType::Drone,
-            ];
-
-            let total_types = gear_types.len();
-            let start_index = config_state.initialized_types_count;
-
-            // Define a safe batch size to stay within gas limits.
-            // Processing 3 types results in ~60 writes, which is very safe.
-            const BATCH_SIZE: u32 = 3;
-            let mut end_index = start_index + BATCH_SIZE;
-            if end_index > total_types {
-                end_index = total_types;
-            }
-
-            // Process the batch
-            let mut i = start_index;
-            while i < end_index {
-                self._initialize_upgrade_data_for_gear_type(ref world, *gear_types.at(i));
+            // Verify the item is equipped before use
+            let mut is_equipped = false;
+            let mut i = 0;
+            while i < player.equipped.len() {
+                if *player.equipped.at(i) == item_id {
+                    is_equipped = true;
+                    break;
+                }
                 i += 1;
             };
+            assert(is_equipped, 'ITEM_NOT_EQUIPPED');
 
-            // Update the config state
-            config_state.initialized_types_count = end_index;
-            if config_state.initialized_types_count == total_types {
-                config_state.is_complete = true;
+            // Verify the item is consumable
+            assert(gear.is_consumable(), 'ITEM_NOT_CONSUMABLE');
+
+            // Apply item effects based on type
+            let item_type = parse_id(gear.asset_id);
+            match item_type {
+                GearType::HealthPotion => {
+                    let heal_amount: u256 = 100;
+                    let new_hp = if player.hp + heal_amount > player.max_hp {
+                        player.max_hp
+                    } else {
+                        player.hp + heal_amount
+                    };
+                    player.hp = new_hp;
+                },
+                GearType::XpBooster => {
+                    let xp_amount: u256 = 200;
+                    player.add_xp(xp_amount);
+                },
+                GearType::EnergyDrink => {
+                    // Temporary stat boost - increase max HP temporarily
+                    let boost_amount: u256 = 50;
+                    player.max_hp += boost_amount;
+                    player.hp += boost_amount;
+                },
+                GearType::RepairKit => { // Repair all equipped gear (placeholder - would need durability system)
+                // For now, just emit an event
+                },
+                GearType::Stimpack => {
+                    // Damage boost - would need temporary effects system
+                    // For now, heal and add XP
+                    let heal_amount: u256 = 50;
+                    player
+                        .hp =
+                            if player.hp + heal_amount > player.max_hp {
+                                player.max_hp
+                            } else {
+                                player.hp + heal_amount
+                            };
+                    player.add_xp(100);
+                },
+                GearType::ArmorRepair => { // Repair armor durability (placeholder)
+                },
+                GearType::WeaponOil => { // Enhance weapon performance temporarily (placeholder)
+                },
+                _ => { assert(false, 'INVALID_CONSUMABLE_TYPE'); },
             }
 
-            world.write_model(@config_state);
+            // Remove item from player's equipped list
+            let mut new_equipped: Array<u256> = array![];
+            let mut i = 0;
+            while i < player.equipped.len() {
+                let equipped_item = *player.equipped.at(i);
+                if equipped_item != item_id {
+                    new_equipped.append(equipped_item);
+                }
+                i += 1;
+            };
+            player.equipped = new_equipped;
+
+            // Burn the item - reduce total_count or remove completely
+            let contract: Contract = world.read_model('CONTRACT');
+            let erc1155_address = contract.erc1155;
+            let erc1155_contract = IERC1155MintableDispatcher { contract_address: erc1155_address };
+            erc1155_contract.burn(caller, item_id, 1);
+
+            // Update player and gear state
+            let mut updated_gear = gear;
+            if updated_gear.total_count > 1 {
+                updated_gear.total_count = updated_gear.total_count - 1;
+            } else {
+                // Clear ownership for fully consumed item
+                updated_gear.owner = ContractAddressDefault::default();
+                updated_gear.spawned = false;
+            }
+            world.write_model(@updated_gear);
+            world.write_model(@player);
+
+            // Emit ItemUsed event
+            world
+                .emit_event(
+                    @ItemUsed {
+                        player_id: caller,
+                        item_id: item_id,
+                        target_id: target_id,
+                        item_type: item_type,
+                    },
+                );
+        }
+
+        fn wield_item(ref self: ContractState, item_id: u256, session_id: felt252) {
+            // Validate session before proceeding
+            self.validate_session_for_action(session_id);
+
+            let mut world = self.world_default();
+            let caller = get_caller_address();
+            let mut player: crate::models::player::Player = world.read_model(caller);
+            let gear: Gear = world.read_model(item_id);
+
+            // Verify the item exists and player owns it
+            assert(gear.owner == caller, 'ITEM_NOT_OWNED');
+
+            // Verify the item is equipped before wielding
+            let mut is_equipped = false;
+            let mut i = 0;
+            while i < player.equipped.len() {
+                if *player.equipped.at(i) == item_id {
+                    is_equipped = true;
+                    break;
+                }
+                i += 1;
+            };
+            assert(is_equipped, 'ITEM_NOT_EQUIPPED');
+
+            // Verify the item can be wielded
+            assert(gear.is_wieldable(), 'ITEM_NOT_WIELDABLE');
+
+            // Set item as "in_action" to indicate it's being wielded
+            let mut updated_gear = gear;
+            updated_gear.in_action = true;
+            world.write_model(@updated_gear);
+
+            // Emit ItemWielded event
+            world.emit_event(@ItemWielded { player_id: caller, item_id: item_id, wielded: true });
+
         }
 
         fn get_gear_details_complete(
@@ -1712,6 +1810,11 @@ pub mod GearActions {
             }
 
             bonuses
+        }
+
+
+        fn erc1155mint(contract_address: ContractAddress) -> IERC1155MintableDispatcher {
+            IERC1155MintableDispatcher { contract_address }
         }
 
 

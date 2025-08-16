@@ -55,7 +55,15 @@ pub enum GearType {
     Vehicle, // 0x30000
     // Pets/Drones -- 0x8xxxxx
     Pet, // 0x800000
-    Drone // 0x800001
+    Drone, // 0x800001
+    // Consumables -- 0x9xxxx
+    HealthPotion, // 0x90000 - restores HP
+    XpBooster, // 0x90001 - increases XP
+    EnergyDrink, // 0x90002 - temporary stat boost
+    RepairKit, // 0x90003 - repairs equipment durability
+    Stimpack, // 0x90004 - temporary damage boost
+    ArmorRepair, // 0x90005 - repairs armor
+    WeaponOil // 0x90006 - temporary weapon enhancement
 }
 
 #[derive(Drop, Copy, Serde, Default)]
@@ -155,238 +163,33 @@ pub impl GearImpl of GearTrait {
         self.owner = new_owner;
         self.spawned = false;
     }
-}
 
-// Implementation of conversion from GearType to felt252
-impl GearTypeIntoFelt252 of Into<GearType, felt252> {
-    fn into(self: GearType) -> felt252 {
-        match self {
-            GearType::None => 0x0,
-            GearType::Weapon => 0x1,
-            GearType::BluntWeapon => 0x101,
-            GearType::Sword => 0x102,
-            GearType::Bow => 0x103,
-            GearType::Firearm => 0x104,
-            GearType::Polearm => 0x105,
-            GearType::HeavyFirearms => 0x106,
-            GearType::Explosives => 0x107,
-            GearType::Helmet => 0x2000,
-            GearType::ChestArmor => 0x2001,
-            GearType::LegArmor => 0x2002,
-            GearType::Boots => 0x2003,
-            GearType::Gloves => 0x2004,
-            GearType::Shield => 0x2005,
-            GearType::Vehicle => 0x30000,
-            GearType::Pet => 0x800000,
-            GearType::Drone => 0x800001,
-        }
+    // Check if item is consumable
+    fn is_consumable(self: @Gear) -> bool {
+        let type_id = *self.asset_id.high;
+        type_id == 0x90000_u128
+            || type_id == 0x90001_u128
+            || type_id == 0x90002_u128
+            || type_id == 0x90003_u128
+            || type_id == 0x90004_u128
+            || type_id == 0x90005_u128
+            || type_id == 0x90006_u128
+    }
+
+    // Check if item can be wielded (non-consumable equipment)
+    fn is_wieldable(self: @Gear) -> bool {
+        let type_id = *self.asset_id.high;
+        type_id == 0x1_u128
+            || type_id == 0x101_u128
+            || type_id == 0x102_u128
+            || type_id == 0x103_u128
+            || type_id == 0x104_u128
+            || type_id == 0x105_u128
+            || type_id == 0x106_u128
+            || type_id == 0x107_u128
     }
 }
 
-// Implementation of conversion from felt252 to GearType
-impl Felt252TryIntoGearType of TryInto<felt252, GearType> {
-    fn try_into(self: felt252) -> Option<GearType> {
-        if self == 0x1 {
-            Option::Some(GearType::Weapon)
-        } else if self == 0x101 {
-            Option::Some(GearType::BluntWeapon)
-        } else if self == 0x102 {
-            Option::Some(GearType::Sword)
-        } else if self == 0x103 {
-            Option::Some(GearType::Bow)
-        } else if self == 0x104 {
-            Option::Some(GearType::Firearm)
-        } else if self == 0x105 {
-            Option::Some(GearType::Polearm)
-        } else if self == 0x106 {
-            Option::Some(GearType::HeavyFirearms)
-        } else if self == 0x107 {
-            Option::Some(GearType::Explosives)
-        } else if self == 0x2000 {
-            Option::Some(GearType::Helmet)
-        } else if self == 0x2001 {
-            Option::Some(GearType::ChestArmor)
-        } else if self == 0x2002 {
-            Option::Some(GearType::LegArmor)
-        } else if self == 0x2003 {
-            Option::Some(GearType::Boots)
-        } else if self == 0x2004 {
-            Option::Some(GearType::Gloves)
-        } else if self == 0x2005 {
-            Option::Some(GearType::Shield)
-        } else if self == 0x30000 {
-            Option::Some(GearType::Vehicle)
-        } else if self == 0x800000 {
-            Option::Some(GearType::Pet)
-        } else if self == 0x800001 {
-            Option::Some(GearType::Drone)
-        } else {
-            // If self is 0x0 or any other invalid code, return None.
-            // Explicitly checking for 0x0 handles the default case.
-            if self == 0x0 {
-                Option::Some(GearType::None)
-            } else {
-                Option::None
-            }
-        }
-    }
-}
 
-// Comprehensive gear details structure
-#[derive(Drop, Clone, Serde)]
-pub struct GearDetailsComplete {
-    pub gear: Gear,
-    pub calculated_stats: GearStatsCalculated,
-    pub upgrade_info: Option<UpgradeInfo>,
-    pub ownership_status: OwnershipStatus,
-}
 
-// Calculated stats based on current upgrade level
-#[derive(Drop, Clone, Serde)]
-pub struct GearStatsCalculated {
-    pub damage: u64,
-    pub range: u64,
-    pub accuracy: u64,
-    pub fire_rate: u64,
-    pub defense: u64,
-    pub durability: u64,
-    pub weight: u64,
-    pub speed: u64,
-    pub armor: u64,
-    pub fuel_capacity: u64,
-    pub loyalty: u64,
-    pub intelligence: u64,
-    pub agility: u64,
-}
 
-// Upgrade information
-#[derive(Drop, Clone, Serde)]
-pub struct UpgradeInfo {
-    pub current_level: u64,
-    pub max_level: u64,
-    pub can_upgrade: bool,
-    pub next_level_cost: Option<UpgradeCost>,
-    pub success_rate: Option<u8>,
-    pub next_level_stats: Option<GearStatsCalculated>,
-    pub total_upgrade_cost: Option<Array<(u256, u256)>> // (token_id, total_amount)
-}
-
-// Ownership and availability status
-#[derive(Drop, Copy, Serde)]
-pub struct OwnershipStatus {
-    pub is_owned: bool,
-    pub owner: ContractAddress,
-    pub is_spawned: bool,
-    pub is_available_for_pickup: bool,
-    pub is_equipped: bool,
-    pub meets_xp_requirement: bool,
-}
-
-// Filtering parameters
-#[derive(Drop, Serde)]
-pub struct GearFilters {
-    pub gear_types: Option<Array<GearType>>,
-    pub min_level: Option<u64>,
-    pub max_level: Option<u64>,
-    pub ownership_filter: Option<OwnershipFilter>,
-    pub min_xp_required: Option<u256>,
-    pub max_xp_required: Option<u256>,
-    pub spawned_only: Option<bool>,
-}
-
-// Ownership filtering options
-#[derive(Drop, Serde, PartialEq)]
-pub enum OwnershipFilter {
-    Owned,
-    NotOwned,
-    Available,
-    Equipped,
-    All,
-}
-
-// Pagination parameters
-#[derive(Drop, Serde)]
-pub struct PaginationParams {
-    pub offset: u32,
-    pub limit: u32,
-}
-
-// Sort parameters
-#[derive(Drop, Copy, Serde)]
-pub struct SortParams {
-    pub sort_by: SortField,
-    pub ascending: bool,
-}
-
-#[derive(Drop, Copy, Serde, PartialEq)]
-pub enum SortField {
-    Level,
-    Damage,
-    Defense,
-    XpRequired,
-    AssetId,
-}
-
-// Paginated result structure
-#[derive(Drop, Clone, Serde)]
-pub struct PaginatedGearResult {
-    pub items: Array<GearDetailsComplete>,
-    pub total_count: u32,
-    pub has_more: bool,
-}
-
-// Equipment slot information
-#[derive(Drop, Copy, Serde)]
-pub struct EquipmentSlotInfo {
-    pub slot_type: felt252,
-    pub equipped_item: Option<Gear>,
-    pub is_empty: bool,
-}
-
-// Combined equipment effects
-#[derive(Drop, Clone, Serde)]
-pub struct CombinedEquipmentEffects {
-    pub total_damage: u64,
-    pub total_defense: u64,
-    pub total_weight: u64,
-    pub equipped_slots: Array<EquipmentSlotInfo>,
-    pub empty_slots: Array<felt252>,
-    pub set_bonuses: Array<(felt252, u64)> // (bonus_type, bonus_value)
-}
-
-// Important Clone impl
-impl OptionUpgradeCostImpl of Clone<Option<UpgradeCost>> {
-    fn clone(self: @Option<UpgradeCost>) -> Option<UpgradeCost> {
-        match self {
-            Option::Some(cost) => Option::Some(cost.clone()),
-            Option::None => Option::None,
-        }
-    }
-}
-
-impl OptionUpgradeInfoImpl of Clone<Option<UpgradeInfo>> {
-    fn clone(self: @Option<UpgradeInfo>) -> Option<UpgradeInfo> {
-        match self {
-            Option::Some(info) => Option::Some(info.clone()),
-            Option::None => Option::None,
-        }
-    }
-}
-
-impl OptionGearStatsCalculatedImpl of Clone<Option<GearStatsCalculated>> {
-    fn clone(self: @Option<GearStatsCalculated>) -> Option<GearStatsCalculated> {
-        match self {
-            Option::Some(geat_stats) => Option::Some(geat_stats.clone()),
-            Option::None => Option::None,
-        }
-    }
-}
-
-impl OptionArrayTupleImpl of Clone<Option<Array<(u256, u256)>>> {
-    fn clone(self: @Option<Array<(u256, u256)>>) -> Option<Array<(u256, u256)>> {
-        match self {
-            Option::Some(arr) => Option::Some(arr.clone()),
-            Option::None => Option::None,
-        }
-    }
-}
