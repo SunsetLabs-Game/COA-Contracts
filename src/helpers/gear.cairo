@@ -1,5 +1,20 @@
 use crate::models::gear::GearType;
 
+// Helper function to calculate upgrade multipliers based on level
+pub fn calculate_level_multiplier(level: u64) -> u64 {
+    // Base multiplier starts at 100% (level 0) and increases by 10% per level
+    100 + (level * 10)
+}
+
+// Helper function to apply upgrade multipliers to base stats
+pub fn apply_upgrade_multiplier(base_stat: u64, level: u64) -> u64 {
+    let multiplier: u128 = calculate_level_multiplier(level).into();
+    let base: u128 = base_stat.into();
+    // Avoid u64 overflow during multiplication
+    let scaled: u128 = (base * multiplier) / 100_u128;
+    scaled.try_into().unwrap_or(0)
+}
+
 // Helper function to get the high 128 bits from a u256
 pub fn get_high(val: u256) -> u128 {
     val.high

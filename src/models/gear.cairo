@@ -99,7 +99,7 @@ pub struct UpgradeMaterial {
 
 // Model to store upgrade costs for each gear type and level
 #[dojo::model]
-#[derive(Drop, Serde)]
+#[derive(Drop, Clone, Serde)]
 pub struct UpgradeCost {
     #[key]
     pub gear_type: GearType,
@@ -110,7 +110,7 @@ pub struct UpgradeCost {
 
 // Model to store success rates for each gear type and level
 #[dojo::model]
-#[derive(Drop, Serde)]
+#[derive(Drop, Clone, Serde)]
 pub struct UpgradeSuccessRate {
     #[key]
     pub gear_type: GearType,
@@ -121,7 +121,7 @@ pub struct UpgradeSuccessRate {
 
 // Model to track the state of the upgrade data initialization process.
 #[dojo::model]
-#[derive(Drop, Copy, Serde, Default)]
+#[derive(Drop, Clone, Serde, Default)]
 pub struct UpgradeConfigState {
     #[key]
     pub singleton_key: u8, // Always 0, to ensure only one instance exists.
@@ -189,6 +189,7 @@ pub impl GearImpl of GearTrait {
             || type_id == 0x107_u128
     }
 }
+
 
 
 
