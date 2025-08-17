@@ -61,10 +61,12 @@ pub trait IGear<TContractState> {
     ) -> Array<u256>; // returns an array of items that were picked
 
     // adds an item to the list of items
+
     fn use_item(
         ref self: TContractState, item_id: u256, target_id: Option<u256>, session_id: felt252,
     );
     fn wield_item(ref self: TContractState, item_id: u256, session_id: felt252);
+
 
 }
 /// TODO: Implement gear levels: Rare, Mythical, etc... these levels would determine its base stats

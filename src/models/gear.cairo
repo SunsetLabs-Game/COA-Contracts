@@ -129,6 +129,15 @@ pub struct UpgradeConfigState {
     pub is_complete: bool,
 }
 
+#[dojo::model]
+#[derive(Drop, Copy, Serde, Default)]
+pub struct GearTypeCounter {
+    #[key]
+    pub gear_type_id: u128,
+    pub count: u128,
+}
+
+
 // for now, all items would implement this trait
 // move this trait and it's impl to `helpers/gear.cairo`
 
@@ -176,6 +185,7 @@ pub impl GearImpl of GearTrait {
             || type_id == 0x90006_u128
     }
 
+
     // Check if item can be wielded (non-consumable equipment)
     fn is_wieldable(self: @Gear) -> bool {
         let type_id = *self.asset_id.high;
@@ -187,6 +197,7 @@ pub impl GearImpl of GearTrait {
             || type_id == 0x105_u128
             || type_id == 0x106_u128
             || type_id == 0x107_u128
+
     }
 }
 
