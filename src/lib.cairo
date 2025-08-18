@@ -86,6 +86,7 @@ pub mod test {
     pub mod test_unequip;
     pub mod upgrade_gear_test;
     pub mod gear_read_test;
+    pub mod use_wield_item_test;
 }
 
 pub mod traits {
