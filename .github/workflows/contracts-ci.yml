@@ -34,17 +34,14 @@ jobs:
 
       - name: Build contracts
         run: |
-          cd src
           sozo build
 
       - name: Run tests
         run: |
-          cd src
           sozo test
 
       - name: Check formatting
         run: |
-          cd src
           scarb fmt --check
 
       # - name: ERC721
