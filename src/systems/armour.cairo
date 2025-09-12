@@ -23,8 +23,8 @@ pub trait IArmour<TContractState> {
 
 #[dojo::contract]
 pub mod ArmourActions {
-    use starknet::{ContractAddress, get_caller_address};
-    use crate::models::armour::{Armour, ArmourTrait};
+    use starknet::ContractAddress;
+    use crate::models::armour::Armour;
     use super::IArmour;
 
     fn dojo_init(ref self: ContractState, admin: ContractAddress) {}

@@ -46,7 +46,6 @@ pub mod TournamentActions {
     use starknet::{ContractAddress, get_caller_address, get_block_timestamp, get_contract_address};
     use dojo::model::ModelStorage;
     // use dojo::world::WorldStorage;
-    use dojo::world::IWorld;
     use dojo::event::EventStorage;
     use core::num::traits::Zero;
     use core::num::traits::Pow;
@@ -326,7 +325,7 @@ pub mod TournamentActions {
             assert(match_.match_id != 0, Errors::MATCH_NOT_FOUND);
             assert(!match_.is_completed, Errors::MATCH_COMPLETED);
 
-            let loser_id = if winner_id == match_.player1 {
+            let _loser_id = if winner_id == match_.player1 {
                 match_.player2.unwrap()
             } else {
                 match_.player1

@@ -1,6 +1,3 @@
-use starknet::ContractAddress;
-use coa::models::session::{SessionKey, SessionKeyCreated, SessionKeyRevoked, SessionKeyUsed};
-
 // Test constants
 const PLAYER_ADDRESS: felt252 = 0x123456789;
 const SESSION_DURATION: u64 = 21600; // 6 hours
@@ -12,6 +9,9 @@ const MAX_SESSION_DURATION: u64 = 86400; // 24 hours
 mod tests {
     use super::*;
     use starknet::contract_address_const;
+    use starknet::ContractAddress;
+
+    use coa::models::session::{SessionKey, SessionKeyCreated, SessionKeyRevoked, SessionKeyUsed};
 
     fn sample_player() -> ContractAddress {
         contract_address_const::<0x123>()
@@ -347,11 +347,11 @@ mod tests {
     #[test]
     fn test_validate_session_for_action_logic() {
         let session_id = 1;
-        let player = sample_player();
-        let session_created_at = 1000;
-        let session_duration = 3600; // 1 hour
-        let used_transactions = 5;
-        let max_transactions = 100;
+        // let player = sample_player();
+        // let session_created_at = 1000;
+        // let session_duration = 3600; // 1 hour
+        // let used_transactions = 5;
+        // let max_transactions = 100;
 
         // Test valid session logic
         let is_valid = session_id != 0;
@@ -365,11 +365,11 @@ mod tests {
     #[test]
     fn test_get_session_status_logic() {
         let session_id = 1;
-        let player = sample_player();
-        let session_created_at = 1000;
-        let session_duration = 3600; // 1 hour
-        let used_transactions = 5;
-        let max_transactions = 100;
+        // let player = sample_player();
+        // let session_created_at = 1000;
+        // let session_duration = 3600; // 1 hour
+        // let used_transactions = 5;
+        // let max_transactions = 100;
 
         // Test valid session status logic
         let is_valid = session_id != 0;

@@ -2,7 +2,7 @@
 mod tests {
     // -----  IMPORTS ----- //
 
-    use crate::models::player::{Player, Body};
+    use crate::models::player::Body;
     use crate::helpers::body::BodyTrait;
     use crate::helpers::gear::{parse_id, get_high};
     use crate::models::gear::GearType;

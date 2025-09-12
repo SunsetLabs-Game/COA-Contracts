@@ -33,8 +33,8 @@ const BASE_XP: u256 = 1000; // can be changed.
 #[generate_trait]
 pub impl PlayerRankImpl of PlayerRankTrait {
     fn add_val(ref self: PlayerRank, val: u32) -> bool {
-        let rank_changed = false;
-        let mut xp: u256 = self.into();
+        // let rank_changed = false;
+        // let mut xp: u256 = self.into();
         false
     }
 

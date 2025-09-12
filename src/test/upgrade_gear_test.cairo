@@ -1,7 +1,3 @@
-use coa::models::gear::{Gear, GearType, UpgradeCost, UpgradeSuccessRate, UpgradeMaterial};
-use coa::models::player::{Player};
-use starknet::ContractAddress;
-
 // Test constants
 const PLAYER_ADDRESS: felt252 = 0x123456789;
 const UPGRADABLE_ITEM_ID: u256 = 0x2001;
@@ -13,6 +9,9 @@ const WIRING_ID: u256 = 2;
 mod upgrade_gear_tests {
     use super::*;
     use starknet::contract_address_const;
+    use coa::models::gear::{Gear, GearType, UpgradeCost, UpgradeSuccessRate, UpgradeMaterial};
+    use coa::models::player::{Player};
+    use starknet::ContractAddress;
 
     // Helper function to create a sample player
     fn sample_player() -> Player {
@@ -154,7 +153,7 @@ mod upgrade_gear_tests {
     fn test_probability_logic_comparison() {
         // This test simulates the comparison part of the probability check
         // Test breakpoint mechanics - levels 1-5 should have higher rates than 6-10
-        let rate_level_4 = sample_upgrade_success_rate(GearType::Firearm, 4, 85);
+        // let rate_level_4 = sample_upgrade_success_rate(GearType::Firearm, 4, 85);
         let rate_level_5 = sample_upgrade_success_rate(GearType::Firearm, 5, 80);
         let rate_level_6 = sample_upgrade_success_rate(GearType::Firearm, 6, 60);
         // Verify breakpoint: level 5 rate should be higher than level 6

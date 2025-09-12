@@ -1,10 +1,9 @@
 use starknet::{ContractAddress, get_caller_address};
 use core::num::traits::Zero;
 use crate::models::gear::{Gear};
-use crate::models::player::{Player, Body, PlayerTrait, Errors};
+use crate::models::player::{Player, Body, Errors};
 use crate::models::core::Contract;
 use crate::erc1155::erc1155::{IERC1155Dispatcher, IERC1155DispatcherTrait};
-use crate::helpers::gear::{get_high};
 use crate::helpers::body::BodyTrait;
 use dojo::event::EventStorage;
 use dojo::model::{ModelStorage, Model};

@@ -37,7 +37,6 @@ pub mod CoreActions {
     use dojo::world::WorldStorage;
     use coa::helpers::gear::{parse_id, random_geartype, get_max_upgrade_level, get_min_xp_needed};
     use coa::models::player::{Player, PlayerTrait};
-    use core::num::traits::Zero;
     use core::traits::Into;
 
     const GEAR: felt252 = 'GEAR';
@@ -79,6 +78,7 @@ pub mod CoreActions {
             let caller = get_caller_address();
             let mut world = self.world_default();
             let contract: Contract = world.read_model(COA_CONTRACTS);
+
             assert(caller == contract.admin, 'Only admin can spawn items');
 
             let erc1155_dispatcher = IERC1155MintableDispatcher {
@@ -86,15 +86,23 @@ pub mod CoreActions {
             };
 
             let mut items = array![];
-            let mut i = 0;
+            let gear_len = gear_details.len();
 
-            while i < gear_details.len() {
+            let mut i = 0;
+            loop {
+                if i >= gear_len {
+                    break;
+                }
+
                 let details = *gear_details.at(i);
+
                 assert(details.validate(), 'Invalid gear details');
 
-                let item_id: u256 = self.generate_incremental_ids(details.gear_type.into());
+                // Generate ID once and reuse
+                let item_id = self.generate_incremental_ids(details.gear_type.into());
                 let item_type: felt252 = details.gear_type.into();
 
+                // Create gear struct with computed values
                 let mut gear = Gear {
                     id: item_id,
                     item_type,
@@ -106,21 +114,19 @@ pub mod CoreActions {
                     owner: contract_address_const::<0>(),
                     max_upgrade_level: details.max_upgrade_level,
                     min_xp_needed: details.min_xp_needed,
-                    spawned: false,
+                    spawned: true,
                 };
 
-                assert(!gear.spawned, 'Gear already spawned');
-                gear.spawned = true;
                 world.write_model(@gear);
+                items.append(item_id);
 
-                items.append(gear.id);
                 erc1155_dispatcher
-                    .mint(contract.warehouse, gear.id, details.total_count.into(), array![].span());
+                    .mint(contract.warehouse, item_id, details.total_count.into(), array![].span());
+
                 i += 1;
             };
 
-            let event = GearSpawned { admin: caller, items };
-            world.emit_event(@event);
+            world.emit_event(@GearSpawned { admin: caller, items });
         }
 
         // move to market only items that have been spawned.
@@ -144,11 +150,13 @@ pub mod CoreActions {
 
             let gear_type = random_geartype();
             let item_type: felt252 = gear_type.into();
-            let item_id: u256 = self.generate_incremental_ids(gear_type.into());
-            let max_upgrade_level: u64 = get_max_upgrade_level(gear_type);
-            let min_xp_needed: u256 = get_min_xp_needed(gear_type);
+            let item_id = self.generate_incremental_ids(item_type.into());
 
-            let gear = Gear {
+            let (max_upgrade_level, min_xp_needed) = (
+                get_max_upgrade_level(gear_type), get_min_xp_needed(gear_type),
+            );
+
+            Gear {
                 id: item_id,
                 item_type,
                 asset_id: item_id,
@@ -160,87 +168,94 @@ pub mod CoreActions {
                 max_upgrade_level,
                 min_xp_needed,
                 spawned: false,
-            };
-
-            gear
+            }
         }
 
         //@ryzen-xp
         fn pick_items(ref self: ContractState, item_ids: Array<u256>) -> Array<u256> {
             let mut world = self.world_default();
             let caller = get_caller_address();
-            let contract: Contract = world.read_model(COA_CONTRACTS);
-            let mut player: Player = world.read_model(caller);
 
+            // Cache contract + dispatcher
+            let contract: Contract = world.read_model(COA_CONTRACTS);
+            let erc1155 = IERC1155Dispatcher { contract_address: contract.erc1155 };
+
+            let mut player: Player = world.read_model(caller);
             player.init('default');
 
-            let mut successfully_picked: Array<u256> = array![];
-
+            let mut successfully_picked = ArrayTrait::<u256>::new();
+            let mut gears_to_update = ArrayTrait::<Gear>::new();
+            let mut events_to_emit = ArrayTrait::<ItemPicked>::new();
             let mut has_vehicle = player.has_vehicle_equipped();
 
+            let item_count = item_ids.len();
             let mut i = 0;
-            while i < item_ids.len() {
+
+            loop {
+                if i >= item_count {
+                    break;
+                }
+
                 let item_id = *item_ids.at(i);
                 let mut gear: Gear = world.read_model(item_id);
 
-                assert(gear.is_available_for_pickup(), 'Item not available');
-
-                if player.xp < gear.min_xp_needed {
-                    i += 1;
-                    continue;
-                }
-
-                let mut equipped = false;
-                let mut mint_item = false;
-
-                if has_vehicle {
-                    // if player has vehicle, mint all items directly to inventory !!!!!!!!!!!!
-                    mint_item = true;
-                } else {
-                    if player.is_equippable(item_id) {
+                // Early filter-out
+                if gear.is_available_for_pickup() && player.clone().xp >= gear.min_xp_needed {
+                    let mut equipped = false;
+                    let can_pick = if has_vehicle {
+                        true
+                    } else if player.is_equippable(item_id) {
                         PlayerTrait::equip(ref player, item_id);
                         equipped = true;
-                        mint_item = true;
-                    } else if player.has_free_inventory_slot() {
-                        mint_item = true;
+                        true
+                    } else {
+                        player.has_free_inventory_slot()
+                    };
+
+                    if can_pick {
+                        // ERC1155 transfer
+                        erc1155
+                            .safe_transfer_from(
+                                contract.warehouse,
+                                caller,
+                                item_id,
+                                1,
+                                ArrayTrait::<felt252>::new().span(),
+                            );
+
+                        // Defer gear update + event
+                        gear.transfer_to(caller);
+                        gears_to_update.append(gear);
+                        successfully_picked.append(item_id);
+
+                        events_to_emit
+                            .append(
+                                ItemPicked {
+                                    player_id: caller, item_id, equipped, via_vehicle: has_vehicle,
+                                },
+                            );
+
+                        // If just equipped a vehicle, persist for next items
+                        if equipped && parse_id(item_id) == GearType::Vehicle {
+                            has_vehicle = true;
+                        }
                     }
                 }
 
-                if mint_item {
-                    // Transfer the pre-minted item from warehouse to the player
-
-                    let erc1155 = IERC1155Dispatcher { contract_address: contract.erc1155 };
-                    erc1155
-                        .safe_transfer_from(
-                            contract.warehouse, caller, item_id, 1, array![].span(),
-                        );
-
-                    gear.transfer_to(caller);
-                    world.write_model(@gear);
-
-                    // Add to successfully picked array
-                    successfully_picked.append(item_id);
-
-                    world
-                        .emit_event(
-                            @ItemPicked {
-                                player_id: caller,
-                                item_id: item_id,
-                                equipped: equipped,
-                                via_vehicle: has_vehicle,
-                            },
-                        );
-                }
-
                 i += 1;
-
-                // if we just equipped a vehicle, enable hands-free pickup
-                if equipped && parse_id(item_id) == GearType::Vehicle {
-                    has_vehicle = true;
-                }
             };
 
-            // Update Player state
+            let updates_len = gears_to_update.len();
+            let mut j = 0;
+            loop {
+                if j >= updates_len {
+                    break;
+                }
+                world.write_model(gears_to_update.at(j));
+                world.emit_event(events_to_emit.at(j));
+                j += 1;
+            };
+
             world.write_model(@player);
 
             successfully_picked
@@ -257,15 +272,12 @@ pub mod CoreActions {
         // Generates an incremental u256 ID based on gear_id.high.
         fn generate_incremental_ids(ref self: ContractState, item_id: u256) -> u256 {
             let mut world = self.world_default();
-
             let mut gear_counter: GearCounter = world.read_model(item_id.high);
 
-            let data = GearCounter { id: item_id.high, counter: gear_counter.counter + 1 };
+            gear_counter.counter += 1;
+            world.write_model(@gear_counter);
 
-            world.write_model(@data);
-
-            let id = u256 { high: data.id, low: data.counter };
-            id
+            u256 { high: item_id.high, low: gear_counter.counter }
         }
     }
 }

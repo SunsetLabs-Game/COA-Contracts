@@ -1,17 +1,14 @@
-use starknet::ContractAddress;
-use coa::models::session::SessionKey;
-use coa::helpers::session_validation::{
-    calculate_session_time_remaining, calculate_session_time_remaining_with_time,
-    is_session_expired, is_session_expired_with_time, needs_auto_renewal, has_transactions_left,
-    validate_session_parameters, validate_session_parameters_with_time, get_session_status,
-    get_session_status_with_time, MIN_SESSION_DURATION, MAX_SESSION_DURATION,
-    AUTO_RENEWAL_THRESHOLD,
-};
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use starknet::contract_address_const;
+    use starknet::ContractAddress;
+    use coa::models::session::SessionKey;
+    use coa::helpers::session_validation::{
+        calculate_session_time_remaining_with_time, is_session_expired_with_time,
+        has_transactions_left, validate_session_parameters_with_time, get_session_status_with_time,
+        MIN_SESSION_DURATION, MAX_SESSION_DURATION, AUTO_RENEWAL_THRESHOLD,
+    };
 
     fn sample_player() -> ContractAddress {
         contract_address_const::<0x123>()

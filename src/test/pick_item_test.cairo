@@ -1,7 +1,3 @@
-use core::num::traits::Zero;
-use coa::models::gear::{Gear, GearTrait};
-use coa::models::player::{Player, PlayerTrait};
-
 // Test constants
 const PLAYER_ADDRESS: felt252 = 0x123456789;
 const ITEM_ID_1: u256 = 0x1001;
@@ -13,6 +9,9 @@ const VEHICLE_ID: u256 = 0x30001;
 mod pick_items_tests {
     use super::*;
     use starknet::contract_address_const;
+    use core::num::traits::Zero;
+    use coa::models::gear::{Gear, GearTrait};
+    use coa::models::player::{Player, PlayerTrait};
 
     fn sample_player() -> Player {
         Player {
