@@ -1,10 +1,3 @@
-use starknet::ContractAddress;
-use coa::models::session::{SessionKey, SessionKeyCreated, SessionKeyRevoked, SessionKeyUsed};
-
-// Import the PlayerActions contract and its interface
-use coa::systems::player::{IPlayerDispatcher, IPlayerDispatcherTrait, PlayerActions};
-use coa::systems::session::SessionActions;
-
 // Test constants
 const PLAYER_ADDRESS: felt252 = 0x123456789;
 const SESSION_DURATION: u64 = 21600; // 6 hours
@@ -23,6 +16,11 @@ const REBEL_TECHNOMANCERS: felt252 = 'REBEL_TECHNOMANCERS';
 mod tests {
     use super::*;
     use starknet::contract_address_const;
+    use starknet::ContractAddress;
+    use coa::models::session::{SessionKey, SessionKeyCreated, SessionKeyRevoked, SessionKeyUsed};
+
+    // Import the PlayerActions contract and its interface
+    use coa::systems::player::IPlayerDispatcher;
 
     fn sample_player() -> ContractAddress {
         contract_address_const::<0x123>()
@@ -389,11 +387,11 @@ mod tests {
     #[test]
     fn test_validate_session_for_action_logic() {
         let session_id = 1;
-        let player = sample_player();
-        let session_created_at = 1000;
-        let session_duration = 3600; // 1 hour
-        let used_transactions = 5;
-        let max_transactions = 100;
+        // let player = sample_player();
+        // let session_created_at = 1000;
+        // let session_duration = 3600; // 1 hour
+        // let used_transactions = 5;
+        // let max_transactions = 100;
 
         // Test valid session logic
         let is_valid = session_id != 0;
@@ -407,11 +405,11 @@ mod tests {
     #[test]
     fn test_get_session_status_logic() {
         let session_id = 1;
-        let player = sample_player();
-        let session_created_at = 1000;
-        let session_duration = 3600; // 1 hour
-        let used_transactions = 5;
-        let max_transactions = 100;
+        // let player = sample_player();
+        // let session_created_at = 1000;
+        // let session_duration = 3600; // 1 hour
+        // let used_transactions = 5;
+        // let max_transactions = 100;
 
         // Test valid session status logic
         let is_valid = session_id != 0;
@@ -473,7 +471,7 @@ mod tests {
     #[test]
     fn test_player_new_with_valid_session() {
         // Create dispatcher for PlayerActions contract
-        let player_dispatcher = create_player_dispatcher();
+        // let player_dispatcher = create_player_dispatcher();
 
         // Create a valid session
         let session = create_sample_session();
@@ -498,7 +496,7 @@ mod tests {
 
     #[test]
     fn test_player_new_with_invalid_session() {
-        let player_dispatcher = create_player_dispatcher();
+        // let player_dispatcher = create_player_dispatcher();
 
         // Test with invalid session ID
         let invalid_session_id = INVALID_SESSION_ID;
@@ -510,7 +508,7 @@ mod tests {
 
     #[test]
     fn test_player_deal_damage_with_valid_session() {
-        let player_dispatcher = create_player_dispatcher();
+        // let player_dispatcher = create_player_dispatcher();
         let session = create_sample_session();
 
         // Validate session
@@ -526,7 +524,7 @@ mod tests {
         // Mock data for damage test
         let target: Array<u256> = array![1_u256];
         let target_types: Array<felt252> = array!['LIVING'];
-        let with_items: Array<u256> = array![];
+        // let with_items: Array<u256> = array![];
 
         // Validate test data structure
         assert(target.len() == 1, 'Target array len');
@@ -539,7 +537,7 @@ mod tests {
 
     #[test]
     fn test_player_get_player_with_valid_session() {
-        let player_dispatcher = create_player_dispatcher();
+        // let player_dispatcher = create_player_dispatcher();
         let session = create_sample_session();
 
         // Validate session
@@ -562,7 +560,7 @@ mod tests {
 
     #[test]
     fn test_player_register_guild_with_valid_session() {
-        let player_dispatcher = create_player_dispatcher();
+        // let player_dispatcher = create_player_dispatcher();
         let session = create_sample_session();
 
         // Validate session
@@ -582,7 +580,7 @@ mod tests {
 
     #[test]
     fn test_player_transfer_objects_with_valid_session() {
-        let player_dispatcher = create_player_dispatcher();
+        // let player_dispatcher = create_player_dispatcher();
         let session = create_sample_session();
 
         // Validate session
@@ -608,7 +606,7 @@ mod tests {
 
     #[test]
     fn test_player_refresh_with_valid_session() {
-        let player_dispatcher = create_player_dispatcher();
+        // let player_dispatcher = create_player_dispatcher();
         let session = create_sample_session();
 
         // Validate session
@@ -791,7 +789,7 @@ mod tests {
         };
 
         // Simulate auto-renewal
-        let current_time = 1400;
+        // let current_time = 1400;
         let new_used_transactions = 0; // Reset to 0
         let new_max_transactions = 100; // Reset to 100
 

@@ -1,5 +1,5 @@
 use crate::models::gear::{GearType, GearDetails, GearDetailsImpl};
-use origami_random::dice::{Dice, DiceTrait};
+use origami_random::dice::DiceTrait;
 
 // Helper function to calculate upgrade multipliers based on level
 pub fn calculate_level_multiplier(level: u64) -> u64 {

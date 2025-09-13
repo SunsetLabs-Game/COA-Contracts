@@ -4,7 +4,6 @@ pub mod MarketplaceActions {
     use starknet::{ContractAddress, get_caller_address, get_block_timestamp, get_contract_address};
     use dojo::model::ModelStorage;
     use dojo::event::EventStorage;
-    use core::num::traits::Zero;
 
 
     use crate::models::marketplace::{

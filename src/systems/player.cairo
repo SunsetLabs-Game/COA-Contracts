@@ -846,7 +846,6 @@ pub mod PlayerActions {
         }
 
         fn calculate_gear_damage(self: @ContractState, gear: Gear) -> u256 {
-            let world = self.world_default();
             let rarity = self.get_item_rarity(gear.asset_id);
             let base_damage = get_base_damage_for_type(parse_id(gear.asset_id));
 

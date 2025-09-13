@@ -261,7 +261,7 @@ pub mod GearActions {
             self._assert_admin();
 
             // Create a new gear instance based on the asset type
-            let new_gear_id = generate_id(GEAR, ref world);
+            let _new_gear_id = generate_id(GEAR, ref world);
             // Implementation would create gear based on asset type
         }
 
@@ -1072,8 +1072,6 @@ pub mod GearActions {
         }
 
         fn _get_ownership_status(self: @ContractState, gear: @Gear) -> OwnershipStatus {
-            let caller = get_caller_address();
-
             OwnershipStatus {
                 is_owned: !gear.owner.is_zero(),
                 owner: *gear.owner,
@@ -1087,7 +1085,7 @@ pub mod GearActions {
         fn _calculate_upgrade_preview(
             self: @ContractState, gear: @Gear, target_level: u64,
         ) -> UpgradeInfo {
-            let gear_type = parse_id(*gear.asset_id);
+            let _gear_type = parse_id(*gear.asset_id);
             let total_costs = self._calculate_total_upgrade_costs(gear, target_level);
 
             // Create gear at target level for stats calculation
@@ -1778,7 +1776,7 @@ pub mod GearActions {
 
         fn _initialize_gear_assets(ref self: ContractState, ref world: WorldStorage) {
             // Weapons - using ERC1155 token IDs as primary keys
-            let weapon_1_id = u256 { low: 0x0001, high: 0x1 };
+            let _weapon_1_id = u256 { low: 0x0001, high: 0x1 };
             // let weapon_1_gear = Gear {
         //     id: generate_id(GEAR, ref world), // WEAPON_1 from ERC1155
         //     item_type: 'WEAPON',

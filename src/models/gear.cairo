@@ -4,10 +4,10 @@
 
 use crate::helpers::base::ContractAddressDefault;
 use core::num::traits::Zero;
-use openzeppelin::token::erc1155::interface::{IERC1155Dispatcher, IERC1155DispatcherTrait};
-use crate::erc1155::erc1155::{IERC1155MintableDispatcher, IERC1155MintableDispatcherTrait};
+// use openzeppelin::token::erc1155::interface::{IERC1155Dispatcher, IERC1155DispatcherTrait};
+// use crate::erc1155::erc1155::{IERC1155MintableDispatcher, IERC1155MintableDispatcherTrait};
 use starknet::ContractAddress;
-use dojo::world::WorldStorage;
+// use dojo::world::WorldStorage;
 use core::traits::{Into, TryInto};
 
 #[dojo::model]
@@ -517,7 +517,7 @@ impl OptionArrayTupleImpl of Clone<Option<Array<(u256, u256)>>> {
 // Tests for GearDetails struct
 #[cfg(test)]
 mod tests {
-    use super::{GearDetails, GearDetailsImpl, GearType};
+    use super::{GearDetailsImpl, GearType};
 
     #[test]
     fn test_valid_gear_details() {

@@ -1,7 +1,7 @@
 use crate::models::player::Body;
 use crate::models::gear::GearType;
 use crate::helpers::gear::{parse_id, count_gear_in_array, contains_gear_type, get_high};
-use crate::models::player::{DEFAULT_MAX_EQUIPPABLE_SLOT, Errors};
+use crate::models::player::Errors;
 use core::num::traits::Zero;
 
 
