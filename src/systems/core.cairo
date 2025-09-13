@@ -264,6 +264,7 @@ pub mod CoreActions {
 
             assert(tournament.creator == caller, 'Only creator can distribute rewards');
             assert(tournament.status == TournamentStatus::Completed, 'Tournament not completed');
+            assert(winners.len() > 0, 'No winners provided');
 
             let prize_per_winner = tournament.prize_pool / winners.len();
 
@@ -422,7 +423,7 @@ pub mod CoreActions {
         // Generate tournament ID
         fn generate_tournament_id(ref self: ContractState) -> u256 {
             let mut world = self.world_default();
-            let mut config: Config = world.read_model(1);
+            let mut config: Config = world.read_model(0);
 
             config.next_tournament_id += 1;
             world.write_model(@config);

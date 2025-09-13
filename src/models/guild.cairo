@@ -1,5 +1,6 @@
 use starknet::ContractAddress;
 use core::num::traits::zero::Zero;
+use crate::helpers::base::ContractAddressDefault;
 
 // --- ENUMS ---
 
@@ -107,11 +108,6 @@ pub struct GuildLevelUp {
 }
 
 // --- HELPERS & ERRORS ---
-impl ContractAddressDefault of Default<ContractAddress> {
-    fn default() -> ContractAddress {
-        Zero::zero()
-    }
-}
 
 pub mod Errors {
     pub const GUILD_NOT_FOUND: felt252 = 'Guild not found';

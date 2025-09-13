@@ -207,12 +207,12 @@ pub mod GuildActions {
 
         fn generate_guild_id(ref self: ContractState) -> u256 {
             let mut world = self.world_default();
-            let mut config: Config = world.read_model(1);
+            let mut config: Config = world.read_model(0);
 
-            config.next_tournament_id += 1;
+            config.next_guild_id += 1;
             world.write_model(@config);
 
-            config.next_tournament_id
+            config.next_guild_id
         }
     }
 }

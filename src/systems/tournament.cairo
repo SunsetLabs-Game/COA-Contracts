@@ -71,7 +71,12 @@ pub mod TournamentActions {
             assert(config.admin.is_zero(), 'Already initialized');
             let admin = get_caller_address();
             let config = Config {
-                id: 0, admin, next_tournament_id: 1, erc1155_address, credit_token_id,
+                id: 0,
+                admin,
+                next_tournament_id: 1,
+                next_guild_id: 1,
+                erc1155_address,
+                credit_token_id,
             };
             world.write_model(@config);
         }
