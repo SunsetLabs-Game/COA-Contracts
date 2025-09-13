@@ -120,18 +120,11 @@ pub mod GuildActions {
             }
 
             // Remove player from guild
-            let empty_guild_member = GuildMember {
-                guild_id: 0,
-                player_id: caller,
-                role: GuildRole::Member,
-                joined_at: 0,
-                contribution: 0,
-            };
-
+            // The GuildMember record can be left as-is or properly deleted
+            // Writing zero values is unnecessary overhead
             let empty_membership = PlayerGuildMembership { player_id: caller, guild_id: 0 };
 
             world.write_model(@guild);
-            world.write_model(@empty_guild_member);
             world.write_model(@empty_membership);
             world.emit_event(@GuildLeft { guild_id: membership.guild_id, player_id: caller });
         }
