@@ -1,9 +1,9 @@
 use starknet::ContractAddress;
-use coa::models::guild::{
+use crate::models::guild::{
     Guild, GuildMember, GuildRole, GuildInvite, GuildCreated, GuildJoined, GuildLeft,
-    GuildInviteSent, GuildInviteAccepted,
+    GuildInviteSent, GuildInviteAccepted, PlayerGuildMembership,
 };
-use coa::models::tournament::Config;
+use crate::models::tournament::Config;
 
 #[starknet::interface]
 pub trait IGuild<TContractState> {
@@ -34,8 +34,8 @@ pub mod GuildActions {
             let mut world = self.world_default();
 
             // Check if player is already in a guild
-            let existing_guild: GuildMember = world.read_model((0, caller));
-            assert(existing_guild.guild_id == 0, 'Player already in guild');
+            let membership: PlayerGuildMembership = world.read_model(caller);
+            assert(membership.guild_id == 0, 'Player already in guild');
 
             // Create guild
             let guild_id = self.generate_guild_id();
@@ -60,8 +60,11 @@ pub mod GuildActions {
                 contribution: 0,
             };
 
+            let membership = PlayerGuildMembership { player_id: caller, guild_id };
+
             world.write_model(@guild);
             world.write_model(@guild_member);
+            world.write_model(@membership);
             world.emit_event(@GuildCreated { guild_id, leader: caller, name: guild_name });
         }
 
@@ -70,8 +73,8 @@ pub mod GuildActions {
             let mut world = self.world_default();
 
             // Check if player is already in a guild
-            let existing_guild: GuildMember = world.read_model((0, caller));
-            assert(existing_guild.guild_id == 0, 'Player already in guild');
+            let membership: PlayerGuildMembership = world.read_model(caller);
+            assert(membership.guild_id == 0, 'Player already in guild');
 
             // Get guild and check if it has space
             let mut guild: Guild = world.read_model(guild_id);
@@ -87,10 +90,13 @@ pub mod GuildActions {
                 contribution: 0,
             };
 
+            let membership = PlayerGuildMembership { player_id: caller, guild_id };
+
             guild.member_count += 1;
 
             world.write_model(@guild);
             world.write_model(@guild_member);
+            world.write_model(@membership);
             world.emit_event(@GuildJoined { guild_id, player_id: caller, role: GuildRole::Member });
         }
 
@@ -99,11 +105,12 @@ pub mod GuildActions {
             let mut world = self.world_default();
 
             // Get player's guild membership
-            let guild_member: GuildMember = world.read_model((0, caller));
-            assert(guild_member.guild_id != 0, 'Player not in guild');
+            let membership: PlayerGuildMembership = world.read_model(caller);
+            assert(membership.guild_id != 0, 'Player not in guild');
+            let guild_member: GuildMember = world.read_model((membership.guild_id, caller));
 
             // Get guild and update member count
-            let mut guild: Guild = world.read_model(guild_member.guild_id);
+            let mut guild: Guild = world.read_model(membership.guild_id);
             guild.member_count -= 1;
 
             // If leader is leaving, disband guild or transfer leadership
@@ -121,9 +128,12 @@ pub mod GuildActions {
                 contribution: 0,
             };
 
+            let empty_membership = PlayerGuildMembership { player_id: caller, guild_id: 0 };
+
             world.write_model(@guild);
             world.write_model(@empty_guild_member);
-            world.emit_event(@GuildLeft { guild_id: guild_member.guild_id, player_id: caller });
+            world.write_model(@empty_membership);
+            world.emit_event(@GuildLeft { guild_id: membership.guild_id, player_id: caller });
         }
 
         fn invite_to_guild(ref self: ContractState, player_id: ContractAddress) {
@@ -131,20 +141,21 @@ pub mod GuildActions {
             let mut world = self.world_default();
 
             // Get caller's guild membership
-            let guild_member: GuildMember = world.read_model((0, caller));
-            assert(guild_member.guild_id != 0, 'Player not in guild');
+            let membership: PlayerGuildMembership = world.read_model(caller);
+            assert(membership.guild_id != 0, 'Player not in guild');
+            let guild_member: GuildMember = world.read_model((membership.guild_id, caller));
             assert(
                 guild_member.role == GuildRole::Leader || guild_member.role == GuildRole::Officer,
                 'Insufficient permissions',
             );
 
             // Check if target player is already in a guild
-            let target_guild: GuildMember = world.read_model((0, player_id));
-            assert(target_guild.guild_id == 0, 'Player already in guild');
+            let target_membership: PlayerGuildMembership = world.read_model(player_id);
+            assert(target_membership.guild_id == 0, 'Player already in guild');
 
             // Create invite
             let invite = GuildInvite {
-                guild_id: guild_member.guild_id,
+                guild_id: membership.guild_id,
                 player_id,
                 invited_by: caller,
                 created_at: get_block_timestamp(),
@@ -156,7 +167,7 @@ pub mod GuildActions {
             world
                 .emit_event(
                     @GuildInviteSent {
-                        guild_id: guild_member.guild_id, player_id, invited_by: caller,
+                        guild_id: membership.guild_id, player_id, invited_by: caller,
                     },
                 );
         }
@@ -172,8 +183,8 @@ pub mod GuildActions {
             assert(get_block_timestamp() <= invite.expires_at, 'Invite expired');
 
             // Check if player is already in a guild
-            let existing_guild: GuildMember = world.read_model((0, caller));
-            assert(existing_guild.guild_id == 0, 'Player already in guild');
+            let membership: PlayerGuildMembership = world.read_model(caller);
+            assert(membership.guild_id == 0, 'Player already in guild');
 
             // Get guild and check if it has space
             let mut guild: Guild = world.read_model(guild_id);
@@ -188,11 +199,14 @@ pub mod GuildActions {
                 contribution: 0,
             };
 
+            let membership = PlayerGuildMembership { player_id: caller, guild_id };
+
             guild.member_count += 1;
             invite.is_accepted = true;
 
             world.write_model(@guild);
             world.write_model(@guild_member);
+            world.write_model(@membership);
             world.write_model(@invite);
             world.emit_event(@GuildJoined { guild_id, player_id: caller, role: GuildRole::Member });
             world.emit_event(@GuildInviteAccepted { guild_id, player_id: caller });
@@ -208,11 +222,10 @@ pub mod GuildActions {
         fn generate_guild_id(ref self: ContractState) -> u256 {
             let mut world = self.world_default();
             let mut config: Config = world.read_model(0);
-
+            let id = config.next_guild_id;
             config.next_guild_id += 1;
             world.write_model(@config);
-
-            config.next_guild_id
+            id
         }
     }
 }

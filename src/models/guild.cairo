@@ -43,6 +43,14 @@ pub struct GuildMember {
 
 #[dojo::model]
 #[derive(Drop, Copy, Serde, Debug, PartialEq, Default)]
+pub struct PlayerGuildMembership {
+    #[key]
+    pub player_id: ContractAddress,
+    pub guild_id: u256,
+}
+
+#[dojo::model]
+#[derive(Drop, Copy, Serde, Debug, PartialEq, Default)]
 pub struct GuildInvite {
     #[key]
     pub guild_id: u256,

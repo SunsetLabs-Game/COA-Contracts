@@ -213,6 +213,7 @@ pub mod CoreActions {
 
             // Deduct entry fee and add to prize pool
             player.deduct_credits(tournament.entry_fee, contract.erc1155);
+            world.write_model(@player);
             tournament.prize_pool += tournament.entry_fee;
             tournament.registered_players += 1;
 
@@ -424,11 +425,10 @@ pub mod CoreActions {
         fn generate_tournament_id(ref self: ContractState) -> u256 {
             let mut world = self.world_default();
             let mut config: Config = world.read_model(0);
-
+            let id = config.next_tournament_id;
             config.next_tournament_id += 1;
             world.write_model(@config);
-
-            config.next_tournament_id
+            id
         }
     }
 }
