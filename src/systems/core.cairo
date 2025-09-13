@@ -23,6 +23,7 @@ pub trait ICore<TContractState> {
     );
     fn join_tournament(ref self: TContractState, tournament_id: u256);
     fn start_tournament(ref self: TContractState, tournament_id: u256);
+    fn complete_tournament(ref self: TContractState, tournament_id: u256);
     fn distribute_tournament_rewards(
         ref self: TContractState, tournament_id: u256, winners: Array<starknet::ContractAddress>,
     );
@@ -267,6 +268,19 @@ pub mod CoreActions {
                 );
         }
 
+        fn complete_tournament(ref self: ContractState, tournament_id: u256) {
+            let caller = get_caller_address();
+            let mut world = self.world_default();
+
+            let mut tournament: Tournament = world.read_model(tournament_id);
+            assert(tournament.creator == caller, 'Only creator can complete tournament');
+            assert(tournament.status == TournamentStatus::InProgress, 'Tournament not in progress');
+
+            tournament.status = TournamentStatus::Completed;
+
+            world.write_model(@tournament);
+        }
+
         fn distribute_tournament_rewards(
             ref self: ContractState, tournament_id: u256, winners: Array<starknet::ContractAddress>,
         ) {
@@ -279,13 +293,22 @@ pub mod CoreActions {
             assert(tournament.status == TournamentStatus::Completed, 'Tournament not completed');
             assert(winners.len() > 0, 'No winners provided');
 
-            let prize_per_winner = tournament.prize_pool / winners.len();
+            // Convert winners length to u256 and calculate prize distribution
+            let winners_len: usize = winners.len();
+            let winners_count: u256 = self.usize_to_u256(winners_len);
+            let prize_per_winner = tournament.prize_pool / winners_count;
+            let remainder = tournament.prize_pool % winners_count;
 
             let mut i = 0;
             while i < winners.len() {
                 let winner = *winners.at(i);
                 let mut player: Player = world.read_model(winner);
-                player.mint_credits(prize_per_winner, contract.erc1155);
+                let mut payout = prize_per_winner;
+                // Give remainder to first winner to avoid silent loss
+                if i == 0 { 
+                    payout += remainder; 
+                }
+                player.mint_credits(payout, contract.erc1155);
                 world.write_model(@player);
                 i += 1;
             };
@@ -419,6 +442,11 @@ pub mod CoreActions {
     pub impl CoreInternalImpl of CoreInternalTrait {
         fn world_default(self: @ContractState) -> WorldStorage {
             self.world(@"coa")
+        }
+
+        // Helper function to convert usize to u256
+        fn usize_to_u256(x: usize) -> u256 {
+            u256 { high: 0, low: x.into() }
         }
 
         //@ryzen-xp
