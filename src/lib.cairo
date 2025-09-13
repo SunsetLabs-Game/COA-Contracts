@@ -5,6 +5,7 @@ pub mod systems {
     pub mod armour;
     pub mod pet;
     pub mod tournament;
+    pub mod guild;
     pub mod session;
     pub mod position;
 }
@@ -29,6 +30,7 @@ pub mod models {
     pub mod vehicle_stats;
     pub mod pet_stats;
     pub mod tournament;
+    pub mod guild;
     pub mod session;
     pub mod weapon {
         pub mod blunt;
