@@ -81,6 +81,18 @@ pub mod CoreActions {
             warehouse,
         };
         world.write_model(@contract);
+
+        // Initialize global config
+        let config = Config {
+            id: 0,
+            admin,
+            next_tournament_id: 1,
+            next_guild_id: 1,
+            erc1155_address: erc1155,
+            credit_token_id: 0,
+            default_guild_max_members: 50,
+        };
+        world.write_model(@config);
     }
 
     #[abi(embed_v0)]

@@ -37,6 +37,9 @@ pub mod GuildActions {
             let membership: PlayerGuildMembership = world.read_model(caller);
             assert(membership.guild_id == 0, 'Player already in guild');
 
+            // Get config for default max members
+            let config: Config = world.read_model(0);
+
             // Create guild
             let guild_id = self.generate_guild_id();
             let guild = Guild {
@@ -46,7 +49,7 @@ pub mod GuildActions {
                 level: 1,
                 experience: 0,
                 member_count: 1,
-                max_members: 50,
+                max_members: config.default_guild_max_members,
                 created_at: get_block_timestamp(),
                 description: 'A new guild',
             };
@@ -120,11 +123,18 @@ pub mod GuildActions {
             }
 
             // Remove player from guild
-            // The GuildMember record can be left as-is or properly deleted
-            // Writing zero values is unnecessary overhead
+            // TODO: Replace with proper deletion when Dojo delete API is available
+            let empty_guild_member = GuildMember {
+                guild_id: 0,
+                player_id: caller,
+                role: GuildRole::Member,
+                joined_at: 0,
+                contribution: 0,
+            };
             let empty_membership = PlayerGuildMembership { player_id: caller, guild_id: 0 };
 
             world.write_model(@guild);
+            world.write_model(@empty_guild_member);
             world.write_model(@empty_membership);
             world.emit_event(@GuildLeft { guild_id: membership.guild_id, player_id: caller });
         }
@@ -181,6 +191,7 @@ pub mod GuildActions {
 
             // Get guild and check if it has space
             let mut guild: Guild = world.read_model(guild_id);
+            assert(guild.id != 0, 'Guild not found');
             assert(guild.member_count < guild.max_members, 'Guild full');
 
             // Add player to guild

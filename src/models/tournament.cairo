@@ -32,6 +32,7 @@ pub struct Config {
     pub next_guild_id: u256,
     pub erc1155_address: ContractAddress,
     pub credit_token_id: u256,
+    pub default_guild_max_members: u32,
 }
 
 #[dojo::model]
