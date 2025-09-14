@@ -1,6 +1,7 @@
 use starknet::ContractAddress;
 use core::option::Option;
 use core::num::traits::zero::Zero;
+use crate::helpers::base::ContractAddressDefault;
 
 // --- ENUMS ---
 
@@ -28,8 +29,10 @@ pub struct Config {
     pub id: u8,
     pub admin: ContractAddress,
     pub next_tournament_id: u256,
+    pub next_guild_id: u256,
     pub erc1155_address: ContractAddress,
     pub credit_token_id: u256,
+    pub default_guild_max_members: u32,
 }
 
 #[dojo::model]
@@ -157,11 +160,6 @@ pub struct PrizeClaimed {
 
 
 // --- HELPERS & ERRORS ---
-impl ContractAddressDefault of Default<ContractAddress> {
-    fn default() -> ContractAddress {
-        Zero::zero()
-    }
-}
 
 pub mod Errors {
     pub const NOT_ADMIN: felt252 = 'Caller is not the admin';

@@ -165,11 +165,26 @@ pub impl PlayerImpl of PlayerTrait {
     }
 
     #[inline(always)]
+    fn deduct_credits(ref self: Player, amount: u256, erc1155_address: ContractAddress) {
+        self.check();
+        assert(amount > 0, 'INVALID AMOUNT');
+        assert(self.get_credits(erc1155_address) >= amount, 'Insufficient credits');
+        self.burn(CREDITS, erc1155_address, amount);
+    }
+
+    #[inline(always)]
     fn mint(ref self: Player, id: u256, erc1155_address: ContractAddress, amount: u256) {
         // to mint anything fungible
         // verify its id, and verify if it even exists
         // if fungible, use amount, else, ignore the amount.
         erc1155mint(erc1155_address).mint(self.id, id, amount, array![].span());
+    }
+
+    #[inline(always)]
+    fn burn(ref self: Player, id: u256, erc1155_address: ContractAddress, amount: u256) {
+        // to burn anything fungible
+        let erc1155_mintable = IERC1155MintableDispatcher { contract_address: erc1155_address };
+        erc1155_mintable.burn(self.id, id, amount);
     }
 
     #[inline(always)]
