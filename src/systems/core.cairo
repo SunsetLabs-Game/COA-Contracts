@@ -173,6 +173,11 @@ pub mod CoreActions {
 
             // Validate admin permissions
             assert(caller == contract.admin, 'Only admin can create tournaments');
+            assert(max_participants >= 2_u32, 'max_participants must be >= 2');
+            // Optional: enforce an upper bound to limit gas/state growth
+            assert(max_participants <= 1024_u32, 'max_participants too large');
+            // If zero-fee tournaments are disallowed, uncomment:
+            // assert(entry_fee > 0, 'entry_fee must be > 0');
 
             // Create tournament
             let tournament_id = self.generate_tournament_id();
@@ -253,6 +258,9 @@ pub mod CoreActions {
             let mut tournament: Tournament = world.read_model(tournament_id);
             assert(tournament.creator == caller, 'Only creator can start tournament');
             assert(tournament.status == TournamentStatus::Open, 'Tournament not open');
+            assert(
+                get_block_timestamp() >= tournament.registration_end, 'Registration still open',
+            );
             assert(
                 tournament.registered_players >= tournament.min_players, 'Not enough participants',
             );
