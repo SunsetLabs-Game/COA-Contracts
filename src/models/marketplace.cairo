@@ -22,6 +22,19 @@ pub struct DailyCounter {
     pub counter: u256,
 }
 
+// Market analytics model for tracking marketplace statistics
+#[derive(Copy, Drop, Serde)]
+#[dojo::model]
+pub struct MarketAnalytics {
+    #[key]
+    pub id: u8,
+    pub total_listings: u256,
+    pub total_sales: u256,
+    pub total_volume: u256,
+    pub total_bids: u256,
+    pub active_auctions: u256,
+}
+
 // Market data model
 #[derive(Copy, Drop, Serde)]
 #[dojo::model]
@@ -72,7 +85,7 @@ pub struct UserMarket {
     pub market_id: u256,
 }
 
-// Error constants
+// Enhanced error constants with additional validation errors
 pub mod Errors {
     pub const NOT_ADMIN: felt252 = 'Not admin';
     pub const ALREADY_INITIALIZED: felt252 = 'Already initialized';
@@ -102,6 +115,15 @@ pub mod Errors {
     pub const SELLER_CANNOT_BID: felt252 = 'SELLER_CANNOT_BID';
     pub const MARKET_ALREADY_REGISTERED: felt252 = 'MARKET_ALREADY_REGISTERED';
     pub const DAILY_LIMIT_EXCEEDED: felt252 = 'DAILY_LIMIT_EXCEEDED';
+    pub const INVALID_AUCTION_DURATION: felt252 = 'INVALID_AUCTION_DURATION';
+    pub const PRICE_TOO_LOW: felt252 = 'PRICE_TOO_LOW';
+    pub const PRICE_TOO_HIGH: felt252 = 'PRICE_TOO_HIGH';
+    pub const AUCTION_DURATION_TOO_SHORT: felt252 = 'AUCTION_DURATION_TOO_SHORT';
+    pub const AUCTION_DURATION_TOO_LONG: felt252 = 'AUCTION_DURATION_TOO_LONG';
+    pub const INSUFFICIENT_BID_INCREMENT: felt252 = 'INSUFFICIENT_BID_INCREMENT';
+    pub const ESCROW_TRANSFER_FAILED: felt252 = 'ESCROW_TRANSFER_FAILED';
+    pub const PLATFORM_FEE_CALCULATION_ERROR: felt252 = 'PLATFORM_FEE_CALC_ERROR';
+    pub const INSUFFICIENT_ALLOWANCE: felt252 = 'INSUFFICIENT_ALLOWANCE';
 }
 
 // Events
@@ -144,6 +166,8 @@ pub struct ItemPurchased {
     pub item_id: u256,
     pub quantity: u256,
     pub total_price: u256,
+    pub platform_fee: u256,
+    pub seller_amount: u256,
 }
 
 #[derive(Drop, Serde)]
@@ -175,7 +199,6 @@ pub struct PlatformFeesWithdrawn {
     pub withdrawn_by: ContractAddress,
 }
 
-
 #[derive(Drop, Serde)]
 #[dojo::event]
 pub struct AuctionStarted {
@@ -184,7 +207,9 @@ pub struct AuctionStarted {
     #[key]
     pub item_id: u256,
     pub market_id: u256,
+    pub starting_bid: u256,
     pub end_time: u64,
+    pub duration: u64,
 }
 
 #[derive(Drop, Serde)]
@@ -195,6 +220,8 @@ pub struct BidPlaced {
     #[key]
     pub bidder: ContractAddress,
     pub amount: u256,
+    pub previous_bid: u256,
+    pub previous_bidder: ContractAddress,
 }
 
 #[derive(Drop, Serde)]
@@ -213,4 +240,74 @@ pub struct ItemRemovedFromMarket {
     #[key]
     pub item_id: u256,
     pub owner: ContractAddress,
+    pub reason: felt252,
+}
+
+// New events for enhanced functionality
+#[derive(Drop, Serde)]
+#[dojo::event]
+pub struct MarketAnalyticsUpdated {
+    #[key]
+    pub timestamp: u64,
+    pub total_listings: u256,
+    pub total_sales: u256,
+    pub total_volume: u256,
+    pub total_bids: u256,
+    pub active_auctions: u256,
+}
+
+#[derive(Drop, Serde)]
+#[dojo::event]
+pub struct PriceValidationFailed {
+    #[key]
+    pub item_id: u256,
+    pub attempted_price: u256,
+    pub min_allowed: u256,
+    pub max_allowed: u256,
+    pub caller: ContractAddress,
+}
+
+#[derive(Drop, Serde)]
+#[dojo::event]
+pub struct AuctionValidationFailed {
+    #[key]
+    pub auction_id: u256,
+    pub attempted_duration: u64,
+    pub min_duration: u64,
+    pub max_duration: u64,
+    pub caller: ContractAddress,
+}
+
+#[derive(Drop, Serde)]
+#[dojo::event]
+pub struct EscrowOperation {
+    #[key]
+    pub item_id: u256,
+    #[key]
+    pub operation: felt252, // 'DEPOSIT', 'RELEASE', 'RETURN'
+    pub from: ContractAddress,
+    pub to: ContractAddress,
+    pub token_id: u256,
+    pub quantity: u256,
+}
+
+#[derive(Drop, Serde)]
+#[dojo::event]
+pub struct PlatformFeeCalculated {
+    #[key]
+    pub transaction_id: u256,
+    pub total_price: u256,
+    pub fee_percentage: u256,
+    pub platform_fee: u256,
+    pub seller_amount: u256,
+}
+
+#[derive(Drop, Serde)]
+#[dojo::event]
+pub struct MarketplaceEmergencyAction {
+    #[key]
+    pub action: felt252, // 'PAUSE', 'UNPAUSE', 'EMERGENCY_WITHDRAW'
+    pub admin: ContractAddress,
+    pub timestamp: u64,
+    pub details: felt252,
 }
