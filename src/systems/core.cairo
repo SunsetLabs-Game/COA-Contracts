@@ -287,11 +287,12 @@ pub mod CoreActions {
             let caller = get_caller_address();
             let mut world = self.world_default();
             let contract: Contract = world.read_model(COA_CONTRACTS);
-            let tournament: Tournament = world.read_model(tournament_id);
+            let mut tournament: Tournament = world.read_model(tournament_id);
 
             assert(tournament.creator == caller, 'Only creator can distribute rewards');
             assert(tournament.status == TournamentStatus::Completed, 'Tournament not completed');
             assert(winners.len() > 0, 'No winners provided');
+            assert(tournament.prize_pool > 0, 'Rewards already distributed or pool empty');
 
             // Convert winners length to u256 and calculate prize distribution
             let winners_len: usize = winners.len();
@@ -302,6 +303,9 @@ pub mod CoreActions {
             let mut i = 0;
             while i < winners.len() {
                 let winner = *winners.at(i);
+                // Winner must be a registered participant
+                let wp: Participant = world.read_model((tournament_id, winner));
+                assert(wp.is_registered, 'Winner not registered in this tournament');
                 let mut player: Player = world.read_model(winner);
                 let mut payout = prize_per_winner;
                 // Give remainder to first winner to avoid silent loss
@@ -313,6 +317,9 @@ pub mod CoreActions {
                 i += 1;
             };
 
+            // One-way finalization by emptying the pool
+            tournament.prize_pool = 0;
+            world.write_model(@tournament);
             world.emit_event(@TournamentFinished { tournament_id, winner: *winners.at(0) });
         }
 
