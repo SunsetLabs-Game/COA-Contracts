@@ -18,6 +18,7 @@ pub trait IMarketplace<TContractState> {
     fn withdraw_platform_fees(ref self: TContractState, to: ContractAddress, amount: u256);
     fn pause_marketplace(ref self: TContractState);
     fn unpause_marketplace(ref self: TContractState);
+    fn admin_emergency_return(ref self: TContractState, item_id: u256, to: ContractAddress);
 
     // Core marketplace functions
     fn register_market(ref self: TContractState, is_auction: bool) -> u256;
@@ -65,14 +66,14 @@ pub mod FeeUtils {
 pub mod AuctionUtils {
     pub const MIN_AUCTION_DURATION_SECONDS: u64 = 3600; // 1 hour
     pub const MAX_AUCTION_DURATION_SECONDS: u64 = 2592000; // 30 days
-    pub const DEFAULT_BID_INCREMENT_BASIS_POINTS: u256 = 5; // 5%
+    pub const DEFAULT_BID_INCREMENT_BASIS_POINTS: u256 = 500; // 5%
 
     pub fn is_valid_duration(duration: u64) -> bool {
         duration >= MIN_AUCTION_DURATION_SECONDS && duration <= MAX_AUCTION_DURATION_SECONDS
     }
 
     pub fn calculate_minimum_bid_increment(current_bid: u256) -> u256 {
-        (current_bid * DEFAULT_BID_INCREMENT_BASIS_POINTS) / 100
+        (current_bid * DEFAULT_BID_INCREMENT_BASIS_POINTS) / 10000
     }
 
     pub fn get_duration_bounds() -> (u64, u64) {

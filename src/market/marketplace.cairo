@@ -116,6 +116,25 @@ pub mod MarketplaceActions {
             world.write_model(@contract);
         }
 
+        //  Admin emergency function for stuck items
+        fn admin_emergency_return(ref self: ContractState, item_id: u256, to: ContractAddress) {
+            let mut world = self.world_default();
+            let contract: Contract = world.read_model(0);
+            assert(get_caller_address() == contract.admin, Errors::NOT_ADMIN);
+
+            let item: MarketItem = world.read_model(item_id);
+
+            self
+                .erc1155_client()
+                .safe_transfer_from(
+                    contract.escrow_address,
+                    to,
+                    item.token_id,
+                    item.quantity,
+                    ArrayTrait::new().span(),
+                );
+        }
+
         // Public Functions
 
         fn register_market(ref self: ContractState, is_auction: bool) -> u256 {
@@ -490,7 +509,7 @@ pub mod MarketplaceActions {
             auction.highest_bidder = caller;
             world.write_model(@auction);
 
-            // Track bid activity
+            self._check_and_extend_auction(auction_id);
             self._track_market_activity('BID', amount);
 
             let event = BidPlaced {
@@ -758,7 +777,6 @@ pub mod MarketplaceActions {
             item.quantity = 0;
             world.write_model(@item);
 
-            // Return item from escrow to seller
             IERC1155Dispatcher { contract_address: contract.erc1155 }
                 .safe_transfer_from(
                     contract.escrow_address,
@@ -767,6 +785,21 @@ pub mod MarketplaceActions {
                     1_u256,
                     ArrayTrait::new().span(),
                 );
+        }
+
+        fn _check_and_extend_auction(ref self: ContractState, auction_id: u256) {
+            let mut world = self.world_default();
+            let mut auction: Auction = world.read_model(auction_id);
+
+            if auction.active {
+                let current_time = get_block_timestamp();
+                let time_remaining = auction.end_time - current_time;
+
+                if time_remaining < 600 {
+                    auction.end_time = current_time + 600;
+                    world.write_model(@auction);
+                }
+            }
         }
     }
 }

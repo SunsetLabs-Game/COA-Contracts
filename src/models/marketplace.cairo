@@ -243,64 +243,6 @@ pub struct ItemRemovedFromMarket {
     pub reason: felt252,
 }
 
-// New events for enhanced functionality
-#[derive(Drop, Serde)]
-#[dojo::event]
-pub struct MarketAnalyticsUpdated {
-    #[key]
-    pub timestamp: u64,
-    pub total_listings: u256,
-    pub total_sales: u256,
-    pub total_volume: u256,
-    pub total_bids: u256,
-    pub active_auctions: u256,
-}
-
-#[derive(Drop, Serde)]
-#[dojo::event]
-pub struct PriceValidationFailed {
-    #[key]
-    pub item_id: u256,
-    pub attempted_price: u256,
-    pub min_allowed: u256,
-    pub max_allowed: u256,
-    pub caller: ContractAddress,
-}
-
-#[derive(Drop, Serde)]
-#[dojo::event]
-pub struct AuctionValidationFailed {
-    #[key]
-    pub auction_id: u256,
-    pub attempted_duration: u64,
-    pub min_duration: u64,
-    pub max_duration: u64,
-    pub caller: ContractAddress,
-}
-
-#[derive(Drop, Serde)]
-#[dojo::event]
-pub struct EscrowOperation {
-    #[key]
-    pub item_id: u256,
-    #[key]
-    pub operation: felt252, // 'DEPOSIT', 'RELEASE', 'RETURN'
-    pub from: ContractAddress,
-    pub to: ContractAddress,
-    pub token_id: u256,
-    pub quantity: u256,
-}
-
-#[derive(Drop, Serde)]
-#[dojo::event]
-pub struct PlatformFeeCalculated {
-    #[key]
-    pub transaction_id: u256,
-    pub total_price: u256,
-    pub fee_percentage: u256,
-    pub platform_fee: u256,
-    pub seller_amount: u256,
-}
 
 #[derive(Drop, Serde)]
 #[dojo::event]
