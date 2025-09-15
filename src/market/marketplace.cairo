@@ -10,7 +10,8 @@ pub mod MarketplaceActions {
         Config, MarketData, MarketItem, Auction, UserMarket, MarketAnalytics, Errors,
         MarketRegistered, ItemsMovedToMarket, GearAddedToMarket, ItemPurchased, AuctionStarted,
         BidPlaced, AuctionEnded, ItemRemovedFromMarket, ItemPriceUpdated, ConfigUpdated,
-        PlatformFeesWithdrawn, DailyCounter, SECONDS_PER_DAY,
+        PlatformFeesWithdrawn, DailyCounter, SECONDS_PER_DAY, PlatformFees,
+        MarketplaceEmergencyAction,
     };
 
     use crate::models::gear::{Gear, GearType};
@@ -41,8 +42,13 @@ pub mod MarketplaceActions {
                 active_auctions: 0,
             };
 
+            let platform_fees = PlatformFees {
+                id: 0, total_collected_fees: 0, total_withdrawn_fees: 0,
+            };
+
             world.write_model(@config);
             world.write_model(@analytics);
+            world.write_model(@platform_fees);
         }
 
         fn set_admin(ref self: ContractState, new_admin: ContractAddress) {
@@ -122,16 +128,33 @@ pub mod MarketplaceActions {
             let contract: Contract = world.read_model(0);
             assert(get_caller_address() == contract.admin, Errors::NOT_ADMIN);
 
-            let item: MarketItem = world.read_model(item_id);
+            let mut item: MarketItem = world.read_model(item_id);
+            assert(item.is_available, Errors::ITEM_NOT_AVAILABLE);
+            let qty = item.quantity;
+            item.is_available = false;
+            item.quantity = 0;
+            world.write_model(@item);
 
             self
                 .erc1155_client()
                 .safe_transfer_from(
-                    contract.escrow_address,
-                    to,
-                    item.token_id,
-                    item.quantity,
-                    ArrayTrait::new().span(),
+                    contract.escrow_address, to, item.token_id, qty, ArrayTrait::new().span(),
+                );
+
+            world
+                .emit_event(
+                    @ItemRemovedFromMarket {
+                        item_id, owner: item.owner, reason: 'EMERGENCY_RETURN',
+                    },
+                );
+            world
+                .emit_event(
+                    @MarketplaceEmergencyAction {
+                        action: 'EMERGENCY_WITHDRAW',
+                        admin: get_caller_address(),
+                        timestamp: get_block_timestamp(),
+                        details: 'ITEM_RETURNED',
+                    },
                 );
         }
 
@@ -174,6 +197,7 @@ pub mod MarketplaceActions {
                 );
 
                 client.transfer_from(caller, get_contract_address(), contract.registration_fee);
+                self._record_platform_fee(contract.registration_fee);
             }
 
             let event = MarketRegistered { market_id, owner: caller, is_auction };
@@ -340,6 +364,8 @@ pub mod MarketplaceActions {
             assert(allowance >= total_price, Errors::INSUFFICIENT_ALLOWANCE);
             client.transfer_from(caller, get_contract_address(), platform_fee);
             client.transfer_from(caller, item.owner, seller_amount);
+
+            self._record_platform_fee(platform_fee);
 
             // Transfer item from escrow to buyer
             self
@@ -542,7 +568,7 @@ pub mod MarketplaceActions {
 
                 item.is_available = false;
                 item.quantity = 0;
-
+                self._record_platform_fee(platform_fee);
                 self.erc20_client().transfer(item.owner, seller_amount);
 
                 // Transfer item to winner
@@ -684,7 +710,20 @@ pub mod MarketplaceActions {
         }
 
         fn get_total_collected_fees(self: @ContractState) -> u256 {
+            let world = self.world_default();
+            let platform_fees: PlatformFees = world.read_model(0);
+            platform_fees.total_collected_fees - platform_fees.total_withdrawn_fees
+        }
+
+        fn get_contract_token_balance(self: @ContractState) -> u256 {
             self.erc20_client().balance_of(get_contract_address())
+        }
+
+        fn get_platform_fees_details(self: @ContractState) -> (u256, u256, u256) {
+            let world = self.world_default();
+            let platform_fees: PlatformFees = world.read_model(0);
+            let available = platform_fees.total_collected_fees - platform_fees.total_withdrawn_fees;
+            (platform_fees.total_collected_fees, platform_fees.total_withdrawn_fees, available)
         }
     }
 
@@ -800,6 +839,14 @@ pub mod MarketplaceActions {
                     world.write_model(@auction);
                 }
             }
+        }
+
+        //  record platform fees:
+        fn _record_platform_fee(ref self: ContractState, fee_amount: u256) {
+            let mut world = self.world_default();
+            let mut platform_fees: PlatformFees = world.read_model(0);
+            platform_fees.total_collected_fees += fee_amount;
+            world.write_model(@platform_fees);
         }
     }
 }

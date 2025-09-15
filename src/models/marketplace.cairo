@@ -85,6 +85,15 @@ pub struct UserMarket {
     pub market_id: u256,
 }
 
+#[derive(Copy, Drop, Serde)]
+#[dojo::model]
+pub struct PlatformFees {
+    #[key]
+    pub id: u8,
+    pub total_collected_fees: u256,
+    pub total_withdrawn_fees: u256,
+}
+
 // Enhanced error constants with additional validation errors
 pub mod Errors {
     pub const NOT_ADMIN: felt252 = 'Not admin';

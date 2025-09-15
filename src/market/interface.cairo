@@ -44,6 +44,8 @@ pub trait IMarketplace<TContractState> {
     fn get_config(self: @TContractState) -> Config;
     fn get_market_analytics(self: @TContractState) -> MarketAnalytics;
     fn get_total_collected_fees(self: @TContractState) -> u256;
+    fn get_contract_token_balance(self: @TContractState) -> u256;
+    fn get_platform_fees_details(self: @TContractState) -> (u256, u256, u256);
 }
 
 
