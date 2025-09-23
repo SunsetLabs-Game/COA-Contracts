@@ -30,6 +30,7 @@ pub mod models {
     pub mod pet_stats;
     pub mod tournament;
     pub mod session;
+    pub mod security;
     pub mod weapon {
         pub mod blunt;
         pub mod bow;
@@ -65,6 +66,7 @@ pub mod helpers {
     pub mod gear;
     pub mod body;
     pub mod session_validation;
+    pub mod security;
 }
 
 pub mod types {
@@ -87,6 +89,7 @@ pub mod test {
     pub mod upgrade_gear_test;
     pub mod gear_read_test;
     pub mod model_test_player;
+    pub mod security_test;
 }
 
 pub mod traits {

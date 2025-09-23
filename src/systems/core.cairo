@@ -4,6 +4,7 @@
 /// Spawn tournamemnts and side quests here, if necessary.
 
 use coa::models::gear::{Gear, GearDetails};
+
 #[starknet::interface]
 pub trait ICore<TContractState> {
     fn spawn_items(ref self: TContractState, gear_details: Array<GearDetails>);
@@ -19,6 +20,8 @@ pub trait ICore<TContractState> {
     fn purchase_credits(ref self: TContractState);
     fn random_gear_generator(ref self: TContractState) -> Gear;
     fn pick_items(ref self: TContractState, item_ids: Array<u256>) -> Array<u256>;
+    fn pause_contract(ref self: TContractState, reason: felt252);
+    fn unpause_contract(ref self: TContractState);
 }
 
 #[dojo::contract]
@@ -28,6 +31,7 @@ pub mod CoreActions {
     use dojo::model::ModelStorage;
     use crate::models::core::{Contract, Operator, GearSpawned, ItemPicked};
     use crate::models::gear::*;
+
     use crate::systems::gear::GearActions::GearActionsImpl;
     use core::array::ArrayTrait;
     use crate::erc1155::erc1155::IERC1155MintableDispatcher;
@@ -38,6 +42,7 @@ pub mod CoreActions {
     use coa::helpers::gear::{parse_id, random_geartype, get_max_upgrade_level, get_min_xp_needed};
     use coa::models::player::{Player, PlayerTrait};
     use core::traits::Into;
+    use core::num::traits::Zero;
 
     const GEAR: felt252 = 'GEAR';
     const COA_CONTRACTS: felt252 = 'COA_CONTRACTS';
@@ -52,6 +57,11 @@ pub mod CoreActions {
         warehouse: ContractAddress,
     ) {
         let mut world = self.world(@"coa_contracts");
+
+        // Security validation for initialization
+        assert(!admin.is_zero(), 'INVALID_ADMIN_ADDRESS');
+        assert(!erc1155.is_zero(), 'INVALID_ERC1155_ADDRESS');
+        assert(!warehouse.is_zero(), 'INVALID_WAREHOUSE_ADDRESS');
 
         // Initialize admin
         let operator = Operator { id: admin, is_operator: true };
@@ -69,17 +79,42 @@ pub mod CoreActions {
             warehouse,
         };
         world.write_model(@contract);
+
+        // Initialize security configuration
+        let security_config = coa::models::security::SecurityConfig {
+            id: coa::helpers::security::SECURITY_CONFIG_ID,
+            max_sessions_per_hour: 5,
+            max_spawns_per_hour: 10,
+            max_transactions_per_session: 1000,
+            session_renewal_threshold: 300, // 5 minutes
+            emergency_pause_enabled: true,
+        };
+        world.write_model(@security_config);
     }
 
     #[abi(embed_v0)]
     pub impl CoreActionsImpl of super::ICore<ContractState> {
         //@ryzen-xp, @truthixify
         fn spawn_items(ref self: ContractState, gear_details: Array<GearDetails>) {
-            let caller = get_caller_address();
             let mut world = self.world_default();
-            let contract: Contract = world.read_model(COA_CONTRACTS);
 
-            assert(caller == contract.admin, 'Only admin can spawn items');
+            // Comprehensive security validation
+            coa::helpers::security::validate_admin_access(
+                world, coa::helpers::security::GAME_ADMIN,
+            );
+            coa::helpers::security::validate_contract_not_paused(world);
+
+            let caller = get_caller_address();
+
+            // Rate limiting check
+            assert(
+                coa::helpers::security::check_rate_limit(
+                    world, caller, coa::helpers::security::SPAWN_ITEMS_OP,
+                ),
+                'RATE_LIMIT_EXCEEDED',
+            );
+
+            let contract: Contract = world.read_model(COA_CONTRACTS);
 
             let erc1155_dispatcher = IERC1155MintableDispatcher {
                 contract_address: contract.erc1155,
@@ -96,7 +131,11 @@ pub mod CoreActions {
 
                 let details = *gear_details.at(i);
 
+                // Input validation and sanitization
                 assert(details.validate(), 'Invalid gear details');
+                assert(details.total_count > 0, 'INVALID_TOTAL_COUNT');
+                assert(details.total_count <= 1000000, 'COUNT_TOO_HIGH');
+                assert(details.max_upgrade_level <= 100, 'UPGRADE_LEVEL_TOO_HIGH');
 
                 // Generate ID once and reuse
                 let item_id = self.generate_incremental_ids(details.gear_type.into());
@@ -140,13 +179,47 @@ pub mod CoreActions {
         fn join_tournament(ref self: ContractState) {}
         fn purchase_credits(ref self: ContractState) {}
 
+        // Emergency functions for admin
+        fn pause_contract(ref self: ContractState, reason: felt252) {
+            let mut world = self.world_default();
+            coa::helpers::security::validate_admin_access(
+                world, coa::helpers::security::SUPER_ADMIN,
+            );
+
+            let mut contract: Contract = world.read_model(COA_CONTRACTS);
+            contract.paused = true;
+            world.write_model(@contract);
+
+            coa::helpers::security::log_security_event(
+                world, 'CONTRACT_PAUSED', get_caller_address(), reason,
+            );
+        }
+
+        fn unpause_contract(ref self: ContractState) {
+            let mut world = self.world_default();
+            coa::helpers::security::validate_admin_access(
+                world, coa::helpers::security::SUPER_ADMIN,
+            );
+
+            let mut contract: Contract = world.read_model(COA_CONTRACTS);
+            contract.paused = false;
+            world.write_model(@contract);
+
+            coa::helpers::security::log_security_event(
+                world, 'CONTRACT_UNPAUSED', get_caller_address(), 0,
+            );
+        }
+
         //@ryzen-xp
         // random gear  item genrator
         fn random_gear_generator(ref self: ContractState) -> Gear {
-            let caller = get_caller_address();
             let mut world = self.world_default();
-            let contract: Contract = world.read_model(COA_CONTRACTS);
-            assert(caller == contract.admin, 'Only admin can spawn items');
+
+            // Security validation
+            coa::helpers::security::validate_admin_access(
+                world, coa::helpers::security::GAME_ADMIN,
+            );
+            coa::helpers::security::validate_contract_not_paused(world);
 
             let gear_type = random_geartype();
             let item_type: felt252 = gear_type.into();
@@ -175,6 +248,14 @@ pub mod CoreActions {
         fn pick_items(ref self: ContractState, item_ids: Array<u256>) -> Array<u256> {
             let mut world = self.world_default();
             let caller = get_caller_address();
+
+            // Security validation
+            coa::helpers::security::validate_contract_not_paused(world);
+            coa::helpers::security::validate_player_access(world, caller);
+
+            // Validate input
+            assert(item_ids.len() > 0, 'NO_ITEMS_PROVIDED');
+            assert(item_ids.len() <= 50, 'TOO_MANY_ITEMS'); // Prevent spam
 
             // Cache contract + dispatcher
             let contract: Contract = world.read_model(COA_CONTRACTS);
