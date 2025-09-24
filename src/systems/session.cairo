@@ -4,7 +4,6 @@ pub mod SessionActions {
     use coa::models::session::{SessionKey, SessionKeyCreated};
     use dojo::model::ModelStorage;
     use dojo::event::EventStorage;
-    use core::poseidon::poseidon_hash_span;
 
     // Constants for session management
     const DEFAULT_SESSION_DURATION: u64 = 21600; // 6 hours in seconds
@@ -19,22 +18,29 @@ pub mod SessionActions {
     ) -> felt252 {
         let player = get_caller_address();
         let current_time = get_block_timestamp();
+        let mut world = self.world_default();
+
+        // Security validations
+        coa::helpers::security::validate_contract_not_paused(world);
+        coa::helpers::security::validate_player_access(world, player);
 
         // Validate session duration
-        assert(session_duration >= MIN_SESSION_DURATION, 'DURATION_TOO_SHORT');
-        assert(session_duration <= MAX_SESSION_DURATION, 'DURATION_TOO_LONG');
+        assert(
+            coa::helpers::security::validate_session_duration(session_duration), 'INVALID_DURATION',
+        );
         assert(max_transactions > 0, 'INVALID_MAX_TRANSACTIONS');
         assert(max_transactions <= MAX_TRANSACTIONS_PER_SESSION, 'TOO_MANY_TRANSACTIONS');
 
-        // Check session limits before creating new session
-        // For now, we'll implement a simple check - in a real implementation,
-        // you would need to iterate through all sessions for this player
-        // This is a placeholder for the session limit validation
-        // TODO: Implement proper session counting mechanism
+        // Rate limiting check
+        assert(
+            coa::helpers::security::check_rate_limit(
+                world, player, coa::helpers::security::CREATE_SESSION_OP,
+            ),
+            'RATE_LIMIT_EXCEEDED',
+        );
 
-        // Generate unique session ID using Poseidon hash to avoid collisions
-        let mut hash_data = array![player.into(), current_time.into()];
-        let session_id = poseidon_hash_span(hash_data.span());
+        // Generate secure session ID
+        let session_id = coa::helpers::security::generate_secure_session_id(player);
 
         // Create session key model
         let session_key = SessionKey {

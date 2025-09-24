@@ -87,6 +87,14 @@ pub mod PlayerActions {
 
             let mut world = self.world_default();
             let caller = get_caller_address();
+
+            // Security validation
+            coa::helpers::security::validate_contract_not_paused(world);
+            coa::helpers::security::validate_player_access(world, caller);
+
+            // Validate faction input
+            assert(coa::helpers::security::validate_faction(faction), 'INVALID_FACTION');
+
             let mut player: Player = world.read_model(caller);
 
             if player.max_hp == 0 {
@@ -133,8 +141,24 @@ pub mod PlayerActions {
             // get the player
             let player: Player = world.read_model(caller);
 
-            // Validate input arrays have same length
+            // Input validation
             assert(target.len() == target_types.len(), 'Target arrays length mismatch');
+            assert(target.len() > 0, 'NO_TARGETS_PROVIDED');
+            assert(target.len() <= 20, 'TOO_MANY_TARGETS'); // Prevent spam attacks
+
+            // Validate target types
+            let mut i = 0;
+            loop {
+                if i >= target_types.len() {
+                    break;
+                }
+                let target_type = *target_types.at(i);
+                assert(
+                    target_type == TARGET_LIVING || target_type == TARGET_OBJECT,
+                    'INVALID_TARGET_TYPE',
+                );
+                i += 1;
+            };
 
             let mut target_index = 0;
 
@@ -722,10 +746,15 @@ pub mod PlayerActions {
         }
 
         fn get_erc1155_address(self: @ContractState) -> ContractAddress {
-            // In a real implementation, this would be stored in the contract state
-            // For now, we return a placeholder address
-            // This should be replaced with the actual ERC1155 contract address
-            starknet::contract_address_const::<0x0>()
+            // Read ERC1155 address from contract configuration
+            let world = self.world_default();
+            let contract: coa::models::core::Contract = world
+                .read_model(coa::helpers::security::COA_CONTRACTS);
+
+            // Validate contract state
+            assert(!contract.erc1155.is_zero(), 'ERC1155_NOT_CONFIGURED');
+
+            contract.erc1155
         }
 
         fn get_game_object_ids(self: @ContractState) -> Array<u256> {
