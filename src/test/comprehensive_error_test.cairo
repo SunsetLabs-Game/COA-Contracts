@@ -262,7 +262,7 @@ mod comprehensive_error_tests {
         let player = sample_player();
 
         start_cheat_caller_address(gear_dispatcher.contract_address, player);
-        
+
         // Set time way in the future (expired session)
         start_cheat_block_timestamp(gear_dispatcher.contract_address, 999999);
 
@@ -449,7 +449,8 @@ mod comprehensive_error_tests {
         let batch_target_types = array![array!['LIVING']]; // Mismatch
         let batch_weapons = array![array![], array![]];
 
-        player_dispatcher.batch_deal_damage(batch_targets, batch_target_types, batch_weapons, 12345);
+        player_dispatcher
+            .batch_deal_damage(batch_targets, batch_target_types, batch_weapons, 12345);
 
         stop_cheat_caller_address(player_dispatcher.contract_address);
         stop_cheat_block_timestamp(player_dispatcher.contract_address);
@@ -469,7 +470,8 @@ mod comprehensive_error_tests {
         let batch_target_types = array![array!['LIVING']]; // Mismatch: 2 targets, 1 type
         let batch_weapons = array![array![]];
 
-        player_dispatcher.batch_deal_damage(batch_targets, batch_target_types, batch_weapons, 12345);
+        player_dispatcher
+            .batch_deal_damage(batch_targets, batch_target_types, batch_weapons, 12345);
 
         stop_cheat_caller_address(player_dispatcher.contract_address);
         stop_cheat_block_timestamp(player_dispatcher.contract_address);
@@ -513,10 +515,10 @@ mod comprehensive_error_tests {
 
         // Test that system continues to work after failed operations
         let invalid_items = array![999999_u256]; // Non-existent item
-        
+
         // This might fail, but shouldn't crash the system
         // gear_dispatcher.equip(invalid_items, 12345);
-        
+
         // Valid operation should still work
         let valid_items = array![1_u256];
         gear_dispatcher.equip(valid_items, 12345);
@@ -536,7 +538,7 @@ mod comprehensive_error_tests {
         // Test recovery from invalid operations
         // Try invalid faction (might fail)
         // player_dispatcher.new('INVALID', 12345);
-        
+
         // Valid operation should work after failure
         player_dispatcher.new('CHAOS_MERCENARIES', 12345);
 

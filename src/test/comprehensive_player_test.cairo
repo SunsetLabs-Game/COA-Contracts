@@ -64,12 +64,15 @@ mod comprehensive_player_tests {
         player_dispatcher.new(CHAOS_MERCENARIES, session_id);
 
         // Verify PlayerInitialized event was emitted
-        spy.assert_emitted(@array![
-            (player_dispatcher.contract_address, PlayerInitialized {
-                player_id: player,
-                faction: CHAOS_MERCENARIES,
-            })
-        ]);
+        spy
+            .assert_emitted(
+                @array![
+                    (
+                        player_dispatcher.contract_address,
+                        PlayerInitialized { player_id: player, faction: CHAOS_MERCENARIES },
+                    ),
+                ],
+            );
 
         stop_cheat_caller_address(player_dispatcher.contract_address);
         stop_cheat_block_timestamp(player_dispatcher.contract_address);
@@ -133,10 +136,13 @@ mod comprehensive_player_tests {
 
         // Test getting player state
         let player_data = player_dispatcher.get_player(1_u256, session_id);
-        
+
         // In a real implementation, we would verify player state
         // For now, we test that the function can be called
-        assert(player_data.id == player || player_data.id == contract_address_const::<0x0>(), 'Player data retrieved');
+        assert(
+            player_data.id == player || player_data.id == contract_address_const::<0x0>(),
+            'Player data retrieved',
+        );
 
         stop_cheat_caller_address(player_dispatcher.contract_address);
         stop_cheat_block_timestamp(player_dispatcher.contract_address);
@@ -277,7 +283,7 @@ mod comprehensive_player_tests {
         // Test with too many targets (more than 20)
         let mut targets: Array<u256> = array![];
         let mut target_types: Array<felt252> = array![];
-        
+
         let mut i = 0;
         loop {
             if i >= 25 { // More than the limit of 20
@@ -327,24 +333,21 @@ mod comprehensive_player_tests {
 
         // Test batch damage processing
         let batch_targets: Array<Array<u256>> = array![
-            array![1_u256, 2_u256],
-            array![3_u256],
-            array![4_u256, 5_u256, 6_u256]
+            array![1_u256, 2_u256], array![3_u256], array![4_u256, 5_u256, 6_u256],
         ];
-        
+
         let batch_target_types: Array<Array<felt252>> = array![
             array![TARGET_LIVING, TARGET_LIVING],
             array![TARGET_OBJECT],
-            array![TARGET_LIVING, TARGET_LIVING, TARGET_OBJECT]
-        ];
-        
-        let batch_weapons: Array<Array<u256>> = array![
-            array![10_u256],
-            array![],
-            array![11_u256, 12_u256]
+            array![TARGET_LIVING, TARGET_LIVING, TARGET_OBJECT],
         ];
 
-        player_dispatcher.batch_deal_damage(batch_targets, batch_target_types, batch_weapons, session_id);
+        let batch_weapons: Array<Array<u256>> = array![
+            array![10_u256], array![], array![11_u256, 12_u256],
+        ];
+
+        player_dispatcher
+            .batch_deal_damage(batch_targets, batch_target_types, batch_weapons, session_id);
 
         stop_cheat_caller_address(player_dispatcher.contract_address);
         stop_cheat_block_timestamp(player_dispatcher.contract_address);
@@ -365,7 +368,8 @@ mod comprehensive_player_tests {
         let batch_target_types: Array<Array<felt252>> = array![];
         let batch_weapons: Array<Array<u256>> = array![];
 
-        player_dispatcher.batch_deal_damage(batch_targets, batch_target_types, batch_weapons, session_id);
+        player_dispatcher
+            .batch_deal_damage(batch_targets, batch_target_types, batch_weapons, session_id);
 
         stop_cheat_caller_address(player_dispatcher.contract_address);
         stop_cheat_block_timestamp(player_dispatcher.contract_address);
@@ -489,13 +493,13 @@ mod comprehensive_player_tests {
         // Test armor damage reduction calculations
         let incoming_damage = 100_u256;
         let armor_defense = 25_u256; // 25% damage reduction
-        
+
         let damage_after_armor = if incoming_damage > armor_defense {
             incoming_damage - armor_defense
         } else {
             0
         };
-        
+
         assert(damage_after_armor == 75, 'Armor reduces damage');
 
         // Test full damage absorption
@@ -505,7 +509,7 @@ mod comprehensive_player_tests {
         } else {
             0
         };
-        
+
         assert(no_damage == 0, 'High armor blocks all damage');
     }
 
@@ -513,17 +517,17 @@ mod comprehensive_player_tests {
     fn test_player_rank_system() {
         // Test player rank progression and damage bonuses
         let base_damage = 100_u256;
-        
+
         // Rank 1 player
         let rank1_multiplier = 100 + (1 * 5); // +5% per rank
         let rank1_damage = (base_damage * rank1_multiplier.into()) / 100;
         assert(rank1_damage == 105, 'Rank 1 damage bonus');
-        
+
         // Rank 5 player
         let rank5_multiplier = 100 + (5 * 5); // +25% at rank 5
         let rank5_damage = (base_damage * rank5_multiplier.into()) / 100;
         assert(rank5_damage == 125, 'Rank 5 damage bonus');
-        
+
         // Rank 10 player
         let rank10_multiplier = 100 + (10 * 5); // +50% at rank 10
         let rank10_damage = (base_damage * rank10_multiplier.into()) / 100;

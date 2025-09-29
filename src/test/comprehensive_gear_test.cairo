@@ -89,7 +89,7 @@ mod comprehensive_gear_tests {
         // Test material consumption logic
         let materials_before = 100_u256; // Mock material count
         gear_dispatcher.upgrade_gear(1_u256, session_id);
-        
+
         // In a real test, we would verify materials were consumed
         let expected_materials_after = materials_before - 10; // Assuming 10 materials per upgrade
         assert(expected_materials_after == 90, 'Materials consumed');
@@ -126,7 +126,7 @@ mod comprehensive_gear_tests {
             min_xp_needed: 100,
             spawned: true,
         };
-        
+
         let cannot_upgrade = max_level_gear.upgrade_level >= max_level_gear.max_upgrade_level;
         assert(cannot_upgrade, 'Should not be able to upgrade');
 
@@ -167,7 +167,7 @@ mod comprehensive_gear_tests {
         // Test equipping conflicting items (e.g., two weapons)
         let weapon1 = 1_u256;
         let weapon2 = 2_u256;
-        
+
         // In a real implementation, this would check for equipment slot conflicts
         let items: Array<u256> = array![weapon1, weapon2];
         gear_dispatcher.equip(items, session_id);
@@ -188,7 +188,7 @@ mod comprehensive_gear_tests {
         // Test stats calculation for equipped items
         let item_id = 1_u256;
         let item_details = gear_dispatcher.get_item_details(item_id, session_id);
-        
+
         // In a real test, we would verify the stats calculation
         // For now, we just test that the function can be called
         assert(item_details.id == item_id || item_details.id == 0, 'Item details retrieved');
@@ -209,7 +209,7 @@ mod comprehensive_gear_tests {
         // Test forging with multiple items
         let forge_materials: Array<u256> = array![1_u256, 2_u256, 3_u256];
         let forged_item = gear_dispatcher.forge(forge_materials, session_id);
-        
+
         // Test forging result
         assert(forged_item == 0 || forged_item > 0, 'Forging completed');
 
@@ -229,7 +229,7 @@ mod comprehensive_gear_tests {
         // Test forging with insufficient materials
         let insufficient_materials: Array<u256> = array![1_u256]; // Only one item
         let result = gear_dispatcher.forge(insufficient_materials, session_id);
-        
+
         // In a real implementation, this might return 0 or fail
         assert(result == 0, 'Insufficient materials');
 
@@ -314,7 +314,10 @@ mod comprehensive_gear_tests {
         };
 
         // Test rarity based on max upgrade level and XP requirements
-        assert(common_gear.max_upgrade_level < rare_gear.max_upgrade_level, 'Rare has higher max level');
+        assert(
+            common_gear.max_upgrade_level < rare_gear.max_upgrade_level,
+            'Rare has higher max level',
+        );
         assert(common_gear.min_xp_needed < rare_gear.min_xp_needed, 'Rare needs more XP');
     }
 
@@ -348,7 +351,7 @@ mod comprehensive_gear_tests {
 
         // Test that other player cannot operate on first player's gear
         start_cheat_caller_address(gear_dispatcher.contract_address, other_player);
-        
+
         // In a real implementation, this should fail or be restricted
         // For now, we just test the pattern
         let other_session_id = 54321;
@@ -403,7 +406,7 @@ mod comprehensive_gear_tests {
         let session_id = 12345;
 
         start_cheat_caller_address(gear_dispatcher.contract_address, player);
-        
+
         // Set time after session expiration
         start_cheat_block_timestamp(gear_dispatcher.contract_address, 5000);
 
@@ -417,18 +420,13 @@ mod comprehensive_gear_tests {
     #[test]
     fn test_gear_level_stats_calculation() {
         // Test gear level stats calculation
-        let base_stats = GearLevelStats {
-            attack: 10,
-            defense: 5,
-            speed: 8,
-            health: 20,
-        };
+        let base_stats = GearLevelStats { attack: 10, defense: 5, speed: 8, health: 20 };
 
         let upgraded_stats = GearLevelStats {
             attack: 15, // +5 from upgrade
             defense: 8, // +3 from upgrade
             speed: 10, // +2 from upgrade
-            health: 30, // +10 from upgrade
+            health: 30 // +10 from upgrade
         };
 
         // Test stat improvements

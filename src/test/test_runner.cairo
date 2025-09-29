@@ -13,7 +13,7 @@ mod test_suite_overview {
     use coa::test::security_test;
 
     // Test categories and their coverage
-    
+
     /// SESSION MANAGEMENT TESTS
     /// - Session creation and validation
     /// - Session expiration handling
@@ -23,7 +23,7 @@ mod test_suite_overview {
     /// - Rate limiting for session creation
     /// - Concurrent session management
     /// - Session security measures
-    
+
     /// GEAR SYSTEM TESTS
     /// - Gear upgrade system and material consumption
     /// - Equipment system with conflict detection
@@ -33,7 +33,7 @@ mod test_suite_overview {
     /// - Gear rarity and type validation
     /// - Ownership validation and transfers
     /// - Batch operations for gear management
-    
+
     /// PLAYER SYSTEM TESTS
     /// - Player creation and initialization
     /// - Faction assignment and validation
@@ -44,7 +44,7 @@ mod test_suite_overview {
     /// - Guild registration system
     /// - Object transfer functionality
     /// - Player refresh mechanisms
-    
+
     /// INTEGRATION TESTS
     /// - Complete game flow scenarios
     /// - Session integration with gear operations
@@ -53,7 +53,7 @@ mod test_suite_overview {
     /// - Cross-system state consistency
     /// - Error recovery scenarios
     /// - Trading and marketplace flows
-    
+
     /// ERROR HANDLING TESTS
     /// - Unauthorized access attempts
     /// - Invalid input validation
@@ -64,7 +64,7 @@ mod test_suite_overview {
     /// - Malformed data handling
     /// - Concurrent access scenarios
     /// - System failure recovery
-    
+
     /// PERFORMANCE TESTS
     /// - Batch vs individual operations
     /// - Array size performance impact
@@ -76,7 +76,7 @@ mod test_suite_overview {
     /// - Gas usage benchmarks
     /// - High frequency operations
     /// - Concurrent user simulation
-    
+
     /// SECURITY TESTS
     /// - Input sanitization validation
     /// - Session duration limits
@@ -141,16 +141,16 @@ mod test_suite_overview {
 #[cfg(test)]
 mod test_execution_guide {
     /// HOW TO RUN TESTS
-    /// 
+    ///
     /// 1. Run all tests:
     ///    `sozo test`
-    /// 
+    ///
     /// 2. Run specific test module:
     ///    `sozo test comprehensive_session_test`
-    /// 
+    ///
     /// 3. Run tests with verbose output:
     ///    `sozo test --verbose`
-    /// 
+    ///
     /// 4. Run tests in specific order:
     ///    - Security tests first (validate access controls)
     ///    - Session tests (core functionality)
@@ -160,22 +160,22 @@ mod test_execution_guide {
     ///    - Performance tests last (optimization validation)
 
     /// TEST CATEGORIES BY PRIORITY
-    /// 
+    ///
     /// HIGH PRIORITY (Critical for production):
     /// - Security tests
     /// - Session management tests
     /// - Error handling tests
-    /// 
+    ///
     /// MEDIUM PRIORITY (Important for functionality):
     /// - Player system tests
     /// - Gear system tests
     /// - Integration tests
-    /// 
+    ///
     /// LOW PRIORITY (Optimization and monitoring):
     /// - Performance tests
 
     /// CONTINUOUS INTEGRATION RECOMMENDATIONS
-    /// 
+    ///
     /// 1. Run security and error tests on every commit
     /// 2. Run full test suite on pull requests
     /// 3. Run performance tests on release candidates

@@ -7,7 +7,9 @@ mod comprehensive_session_tests {
         spy_events, EventSpyAssertionsTrait,
     };
     use coa::models::session::{SessionKey, SessionKeyCreated};
-    use coa::systems::session::{SessionActions, ISessionActionsDispatcher, ISessionActionsDispatcherTrait};
+    use coa::systems::session::{
+        SessionActions, ISessionActionsDispatcher, ISessionActionsDispatcherTrait,
+    };
 
     // Test constants
     const VALID_DURATION: u64 = 3600; // 1 hour
@@ -89,7 +91,8 @@ mod comprehensive_session_tests {
         let has_transactions = session_dispatcher.check_transaction_limit(50, VALID_TRANSACTIONS);
         assert(has_transactions, 'Should have transactions left');
 
-        let no_transactions = session_dispatcher.check_transaction_limit(VALID_TRANSACTIONS, VALID_TRANSACTIONS);
+        let no_transactions = session_dispatcher
+            .check_transaction_limit(VALID_TRANSACTIONS, VALID_TRANSACTIONS);
         assert(!no_transactions, 'Should have no transactions left');
 
         stop_cheat_caller_address(session_dispatcher.contract_address);
@@ -119,7 +122,8 @@ mod comprehensive_session_tests {
         assert(needs_renewal_now, 'Should need renewal');
 
         // Test session renewal
-        let renewed = session_dispatcher.renew_session(session_id, VALID_DURATION, VALID_TRANSACTIONS);
+        let renewed = session_dispatcher
+            .renew_session(session_id, VALID_DURATION, VALID_TRANSACTIONS);
         assert(renewed, 'Session should be renewed');
 
         stop_cheat_caller_address(session_dispatcher.contract_address);
@@ -135,15 +139,18 @@ mod comprehensive_session_tests {
         start_cheat_block_timestamp(session_dispatcher.contract_address, 1000);
 
         // Test minimum duration
-        let session_id_min = session_dispatcher.create_session_key(MIN_DURATION, VALID_TRANSACTIONS);
+        let session_id_min = session_dispatcher
+            .create_session_key(MIN_DURATION, VALID_TRANSACTIONS);
         assert(session_id_min != 0, 'Min duration session created');
 
         // Test maximum duration
-        let session_id_max = session_dispatcher.create_session_key(MAX_DURATION, VALID_TRANSACTIONS);
+        let session_id_max = session_dispatcher
+            .create_session_key(MAX_DURATION, VALID_TRANSACTIONS);
         assert(session_id_max != 0, 'Max duration session created');
 
         // Test maximum transactions
-        let session_id_max_tx = session_dispatcher.create_session_key(VALID_DURATION, MAX_TRANSACTIONS);
+        let session_id_max_tx = session_dispatcher
+            .create_session_key(VALID_DURATION, MAX_TRANSACTIONS);
         assert(session_id_max_tx != 0, 'Max transactions session created');
 
         stop_cheat_caller_address(session_dispatcher.contract_address);
@@ -309,14 +316,20 @@ mod comprehensive_session_tests {
         let session_id = session_dispatcher.create_session_key(VALID_DURATION, VALID_TRANSACTIONS);
 
         // Verify SessionKeyCreated event was emitted
-        spy.assert_emitted(@array![
-            (session_dispatcher.contract_address, SessionKeyCreated {
-                session_id,
-                player_address: player,
-                session_key_address: player,
-                expires_at: 1000 + VALID_DURATION,
-            })
-        ]);
+        spy
+            .assert_emitted(
+                @array![
+                    (
+                        session_dispatcher.contract_address,
+                        SessionKeyCreated {
+                            session_id,
+                            player_address: player,
+                            session_key_address: player,
+                            expires_at: 1000 + VALID_DURATION,
+                        },
+                    ),
+                ],
+            );
 
         stop_cheat_caller_address(session_dispatcher.contract_address);
         stop_cheat_block_timestamp(session_dispatcher.contract_address);

@@ -62,30 +62,22 @@ mod comprehensive_performance_tests {
         let targets1 = array![1_u256];
         let target_types1 = array!['LIVING'];
         let weapons1 = array![];
-        
+
         player_dispatcher.deal_damage(targets1, target_types1, weapons1, session_id);
-        
+
         let targets2 = array![2_u256];
         let target_types2 = array!['LIVING'];
         let weapons2 = array![];
-        
+
         player_dispatcher.deal_damage(targets2, target_types2, weapons2, session_id);
 
         // Test batch operations (more efficient)
-        let batch_targets = array![
-            array![3_u256, 4_u256],
-            array![5_u256, 6_u256]
-        ];
-        let batch_target_types = array![
-            array!['LIVING', 'LIVING'],
-            array!['LIVING', 'LIVING']
-        ];
-        let batch_weapons = array![
-            array![],
-            array![]
-        ];
+        let batch_targets = array![array![3_u256, 4_u256], array![5_u256, 6_u256]];
+        let batch_target_types = array![array!['LIVING', 'LIVING'], array!['LIVING', 'LIVING']];
+        let batch_weapons = array![array![], array![]];
 
-        player_dispatcher.batch_deal_damage(batch_targets, batch_target_types, batch_weapons, session_id);
+        player_dispatcher
+            .batch_deal_damage(batch_targets, batch_target_types, batch_weapons, session_id);
 
         stop_cheat_caller_address(player_dispatcher.contract_address);
         stop_cheat_block_timestamp(player_dispatcher.contract_address);
@@ -110,15 +102,16 @@ mod comprehensive_performance_tests {
             if i >= 15 { // Large batch
                 break;
             }
-            
+
             batch_targets.append(array![(i + 1).into(), (i + 2).into()]);
             batch_target_types.append(array!['LIVING', 'LIVING']);
             batch_weapons.append(array![]);
-            
+
             i += 1;
         };
 
-        player_dispatcher.batch_deal_damage(batch_targets, batch_target_types, batch_weapons, session_id);
+        player_dispatcher
+            .batch_deal_damage(batch_targets, batch_target_types, batch_weapons, session_id);
 
         stop_cheat_caller_address(player_dispatcher.contract_address);
         stop_cheat_block_timestamp(player_dispatcher.contract_address);
@@ -231,7 +224,7 @@ mod comprehensive_performance_tests {
         start_cheat_caller_address(player_dispatcher.contract_address, chaos_player);
         start_cheat_block_timestamp(player_dispatcher.contract_address, 1000);
         player_dispatcher.new('CHAOS_MERCENARIES', session_id);
-        
+
         let targets = array![1_u256];
         let target_types = array!['LIVING'];
         let weapons = array![10_u256];
@@ -272,9 +265,9 @@ mod comprehensive_performance_tests {
 
         // Test multiple operations with same session (validation caching)
         start_cheat_caller_address(gear_dispatcher.contract_address, player);
-        
+
         let items = array![1_u256];
-        
+
         // Multiple operations to test session validation performance
         gear_dispatcher.equip(items, session_id);
         gear_dispatcher.upgrade_gear(1_u256, session_id);
@@ -325,21 +318,15 @@ mod comprehensive_performance_tests {
         // Using smaller batches to reduce memory usage
         let batch_targets = array![
             array![1_u256, 2_u256], // Small batches
-            array![3_u256, 4_u256],
-            array![5_u256, 6_u256]
+            array![3_u256, 4_u256], array![5_u256, 6_u256],
         ];
         let batch_target_types = array![
-            array!['LIVING', 'LIVING'],
-            array!['LIVING', 'LIVING'],
-            array!['LIVING', 'LIVING']
+            array!['LIVING', 'LIVING'], array!['LIVING', 'LIVING'], array!['LIVING', 'LIVING'],
         ];
-        let batch_weapons = array![
-            array![],
-            array![],
-            array![]
-        ];
+        let batch_weapons = array![array![], array![], array![]];
 
-        player_dispatcher.batch_deal_damage(batch_targets, batch_target_types, batch_weapons, session_id);
+        player_dispatcher
+            .batch_deal_damage(batch_targets, batch_target_types, batch_weapons, session_id);
 
         stop_cheat_caller_address(player_dispatcher.contract_address);
         stop_cheat_block_timestamp(player_dispatcher.contract_address);
@@ -384,11 +371,11 @@ mod comprehensive_performance_tests {
 
         // Test multiple operations that emit events
         player_dispatcher.new('CHAOS_MERCENARIES', session_id);
-        
+
         let targets = array![1_u256, 2_u256, 3_u256];
         let target_types = array!['LIVING', 'LIVING', 'LIVING'];
         let weapons = array![];
-        
+
         player_dispatcher.deal_damage(targets, target_types, weapons, session_id);
 
         // Events should be emitted efficiently
@@ -440,10 +427,10 @@ mod comprehensive_performance_tests {
 
         // Benchmark single operations
         player_dispatcher.new('CHAOS_MERCENARIES', session_id);
-        
+
         stop_cheat_caller_address(player_dispatcher.contract_address);
         start_cheat_caller_address(gear_dispatcher.contract_address, player);
-        
+
         let items = array![1_u256];
         gear_dispatcher.equip(items, session_id);
         gear_dispatcher.upgrade_gear(1_u256, session_id);
@@ -465,20 +452,17 @@ mod comprehensive_performance_tests {
         let batch_targets = array![
             array![1_u256, 2_u256, 3_u256],
             array![4_u256, 5_u256],
-            array![6_u256, 7_u256, 8_u256, 9_u256]
+            array![6_u256, 7_u256, 8_u256, 9_u256],
         ];
         let batch_target_types = array![
             array!['LIVING', 'LIVING', 'LIVING'],
             array!['LIVING', 'LIVING'],
-            array!['LIVING', 'LIVING', 'LIVING', 'LIVING']
+            array!['LIVING', 'LIVING', 'LIVING', 'LIVING'],
         ];
-        let batch_weapons = array![
-            array![10_u256],
-            array![],
-            array![11_u256, 12_u256]
-        ];
+        let batch_weapons = array![array![10_u256], array![], array![11_u256, 12_u256]];
 
-        player_dispatcher.batch_deal_damage(batch_targets, batch_target_types, batch_weapons, session_id);
+        player_dispatcher
+            .batch_deal_damage(batch_targets, batch_target_types, batch_weapons, session_id);
 
         stop_cheat_caller_address(player_dispatcher.contract_address);
         stop_cheat_block_timestamp(player_dispatcher.contract_address);
@@ -497,16 +481,16 @@ mod comprehensive_performance_tests {
 
         // Test high frequency operations
         let items = array![1_u256];
-        
+
         let mut i = 0;
         loop {
             if i >= 10 { // High frequency test
                 break;
             }
-            
+
             gear_dispatcher.equip(items, session_id);
             gear_dispatcher.unequip(items, session_id);
-            
+
             i += 1;
         };
 
@@ -525,7 +509,7 @@ mod comprehensive_performance_tests {
             contract_address_const::<0x456>(),
             contract_address_const::<0x789>(),
             contract_address_const::<0xABC>(),
-            contract_address_const::<0xDEF>()
+            contract_address_const::<0xDEF>(),
         ];
 
         let mut i = 0;
@@ -533,20 +517,20 @@ mod comprehensive_performance_tests {
             if i >= players.len() {
                 break;
             }
-            
+
             let player = *players.at(i);
             start_cheat_caller_address(player_dispatcher.contract_address, player);
             start_cheat_block_timestamp(player_dispatcher.contract_address, 1000 + i.into());
-            
+
             player_dispatcher.new('CHAOS_MERCENARIES', session_id);
-            
+
             let targets = array![(i + 1).into()];
             let target_types = array!['LIVING'];
             let weapons = array![];
             player_dispatcher.deal_damage(targets, target_types, weapons, session_id);
-            
+
             stop_cheat_caller_address(player_dispatcher.contract_address);
-            
+
             i += 1;
         };
 

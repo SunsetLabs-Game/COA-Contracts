@@ -69,7 +69,8 @@ mod comprehensive_integration_tests {
 
     #[test]
     fn test_complete_game_flow() {
-        // Test: Create player -> Create session -> Spawn gear -> Equip gear -> Deal damage -> Trade items
+        // Test: Create player -> Create session -> Spawn gear -> Equip gear -> Deal damage -> Trade
+        // items
         let player = sample_player();
         let admin = contract_address_const::<0x999>();
 
@@ -139,21 +140,21 @@ mod comprehensive_integration_tests {
 
         // Test multiple gear operations with same session
         start_cheat_caller_address(gear_dispatcher.contract_address, player);
-        
+
         let items = array![1_u256, 2_u256];
-        
+
         // Operation 1: Equip
         gear_dispatcher.equip(items, session_id);
-        
+
         // Operation 2: Upgrade
         gear_dispatcher.upgrade_gear(1_u256, session_id);
-        
+
         // Operation 3: Get details
         let _details = gear_dispatcher.get_item_details(1_u256, session_id);
-        
+
         // Operation 4: Unequip
         gear_dispatcher.unequip(items, session_id);
-        
+
         stop_cheat_caller_address(gear_dispatcher.contract_address);
         stop_cheat_block_timestamp(gear_dispatcher.contract_address);
     }
@@ -173,10 +174,10 @@ mod comprehensive_integration_tests {
         // Test operation before expiration
         start_cheat_caller_address(gear_dispatcher.contract_address, player);
         start_cheat_block_timestamp(gear_dispatcher.contract_address, 2000); // Still valid
-        
+
         let items = array![1_u256];
         gear_dispatcher.equip(items, session_id); // Should work
-        
+
         stop_cheat_caller_address(gear_dispatcher.contract_address);
         stop_cheat_block_timestamp(gear_dispatcher.contract_address);
     }
@@ -196,10 +197,10 @@ mod comprehensive_integration_tests {
         // Test operation that triggers auto-renewal
         start_cheat_caller_address(gear_dispatcher.contract_address, player);
         start_cheat_block_timestamp(gear_dispatcher.contract_address, 4300); // Close to expiration
-        
+
         let items = array![1_u256];
         gear_dispatcher.equip(items, session_id); // Should trigger auto-renewal
-        
+
         stop_cheat_caller_address(gear_dispatcher.contract_address);
         stop_cheat_block_timestamp(gear_dispatcher.contract_address);
     }
@@ -242,7 +243,7 @@ mod comprehensive_integration_tests {
     fn test_multi_player_interaction() {
         let player1 = contract_address_const::<0x123>();
         let player2 = contract_address_const::<0x456>();
-        
+
         let player_dispatcher = create_player_dispatcher();
         let session_dispatcher = create_session_dispatcher();
 
@@ -281,7 +282,7 @@ mod comprehensive_integration_tests {
     fn test_gear_trading_flow() {
         let player1 = contract_address_const::<0x123>();
         let player2 = contract_address_const::<0x456>();
-        
+
         let player_dispatcher = create_player_dispatcher();
         let session_dispatcher = create_session_dispatcher();
 
@@ -324,27 +325,22 @@ mod comprehensive_integration_tests {
 
         // Test batch damage operations
         start_cheat_caller_address(player_dispatcher.contract_address, player);
-        
+
         let batch_targets = array![
-            array![1_u256, 2_u256],
-            array![3_u256, 4_u256, 5_u256],
-            array![6_u256]
+            array![1_u256, 2_u256], array![3_u256, 4_u256, 5_u256], array![6_u256],
         ];
-        
+
         let batch_target_types = array![
             array![TARGET_LIVING, TARGET_LIVING],
             array![TARGET_LIVING, TARGET_LIVING, TARGET_LIVING],
-            array![TARGET_LIVING]
-        ];
-        
-        let batch_weapons = array![
-            array![10_u256],
-            array![11_u256, 12_u256],
-            array![]
+            array![TARGET_LIVING],
         ];
 
-        player_dispatcher.batch_deal_damage(batch_targets, batch_target_types, batch_weapons, session_id);
-        
+        let batch_weapons = array![array![10_u256], array![11_u256, 12_u256], array![]];
+
+        player_dispatcher
+            .batch_deal_damage(batch_targets, batch_target_types, batch_weapons, session_id);
+
         stop_cheat_caller_address(player_dispatcher.contract_address);
         stop_cheat_block_timestamp(session_dispatcher.contract_address);
     }
@@ -358,32 +354,33 @@ mod comprehensive_integration_tests {
         // Create session with limited transactions
         start_cheat_caller_address(session_dispatcher.contract_address, player);
         start_cheat_block_timestamp(session_dispatcher.contract_address, 1000);
-        let session_id = session_dispatcher.create_session_key(VALID_DURATION, 5); // Only 5 transactions
+        let session_id = session_dispatcher
+            .create_session_key(VALID_DURATION, 5); // Only 5 transactions
         stop_cheat_caller_address(session_dispatcher.contract_address);
 
         // Use up transactions
         start_cheat_caller_address(gear_dispatcher.contract_address, player);
-        
+
         let items = array![1_u256];
-        
+
         // Transaction 1
         gear_dispatcher.equip(items, session_id);
-        
+
         // Transaction 2
         gear_dispatcher.upgrade_gear(1_u256, session_id);
-        
+
         // Transaction 3
         gear_dispatcher.unequip(items, session_id);
-        
+
         // Transaction 4
         gear_dispatcher.equip(items, session_id);
-        
+
         // Transaction 5
         gear_dispatcher.upgrade_gear(1_u256, session_id);
-        
+
         // Transaction 6 should fail or trigger renewal
         // gear_dispatcher.unequip(items, session_id);
-        
+
         stop_cheat_caller_address(gear_dispatcher.contract_address);
         stop_cheat_block_timestamp(session_dispatcher.contract_address);
     }
@@ -416,7 +413,10 @@ mod comprehensive_integration_tests {
         start_cheat_caller_address(player_dispatcher.contract_address, player);
         let player_data = player_dispatcher.get_player(player.into(), session_id);
         // In a real test, we would verify the player has the equipped gear
-        assert(player_data.id == player || player_data.id == contract_address_const::<0x0>(), 'Player state consistent');
+        assert(
+            player_data.id == player || player_data.id == contract_address_const::<0x0>(),
+            'Player state consistent',
+        );
         stop_cheat_caller_address(player_dispatcher.contract_address);
 
         // Check gear state reflects ownership
@@ -443,16 +443,16 @@ mod comprehensive_integration_tests {
 
         // Test recovery from failed operations
         start_cheat_caller_address(gear_dispatcher.contract_address, player);
-        
+
         // Try to equip non-existent item (should handle gracefully)
         let invalid_items = array![999999_u256];
         // This might fail, but system should remain stable
         // gear_dispatcher.equip(invalid_items, session_id);
-        
+
         // Try valid operation after failed one
         let valid_items = array![1_u256];
         gear_dispatcher.equip(valid_items, session_id);
-        
+
         stop_cheat_caller_address(gear_dispatcher.contract_address);
         stop_cheat_block_timestamp(session_dispatcher.contract_address);
     }
